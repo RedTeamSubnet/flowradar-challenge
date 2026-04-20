@@ -1,0 +1,2 @@
+fastapi[all]~=0.135.1
+requests~=2.32.5

@@ -1,0 +1,1 @@
+redteam_core @ git+https://github.com/RedTeamSubnet/RedTeam.git@v4.2.2

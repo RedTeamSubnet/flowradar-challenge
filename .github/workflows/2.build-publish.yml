@@ -1,0 +1,76 @@
+name: 2. Build and Publish
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["1. Bump Version"]
+    types:
+      - completed
+  push:
+    tags:
+      - "v*.*.*-*"
+
+env:
+  _VERSION: 0.0.0
+
+jobs:
+  build_publish:
+    name: Build and Publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Get latest version
+        run: |
+          git pull origin main
+          echo "Current version: v$(./scripts/get-version.sh)"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+        # with:
+        #   ## Latest version causes segfault:
+        #   ## https://github.com/docker/setup-qemu-action/issues/198
+        #   image: tonistiigi/binfmt:qemu-v7.0.0-28
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Login to docker hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Get version
+        run: echo "_VERSION=$(./scripts/get-version.sh)" >> ${GITHUB_ENV}
+      # - name: Build and export
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: ./src/flr_challenge/challenge
+      #     secrets: |
+      #       "HASH_PASSWORD=${{ secrets.DOCKER_UID_HASH_PASSWORD }}"
+      #     load: true
+      #     cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:cache-latest
+      #     tags: ${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:test
+      # - name: Test docker image
+      #   run: |
+      #     docker run --rm -dt -p 10001:10001 ${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:test
+      #     sleep 3
+      #     curl -s http://localhost:10001/ping | grep "Pong"
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src/flr_challenge/challenge
+          secrets: |
+            "HASH_PASSWORD=${{ secrets.DOCKER_UID_HASH_PASSWORD }}"
+          platforms: linux/amd64
+          # platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:cache-latest
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:cache-latest,mode=max
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/flowradar-challenge:${{ env._VERSION }}
+          push: true
+      - name: Trigger release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run 3.create-release.yml

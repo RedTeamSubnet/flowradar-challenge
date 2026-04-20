@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=70.3.0,<83.0.0", "setuptools-scm>=8.0.4,<10.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flr_challenge"
+authors = [
+	{ name = "Javokhir Yuldoshev", email = "aliyuldashev880@gmail.com" },
+]
+description = "This is a RedTeam Subnet's flowradar: vpn detection repository."
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+keywords = [
+	"flr_challenge",
+	"bittensor",
+	"redteam",
+	"subnet",
+	"challenge",
+	"template",
+]
+license-files = ["LICEN[CS]E*"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: Developers",
+	"Topic :: Software Development :: Libraries",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+# [tool.setuptools.packages.find]
+# where = ["src"]
+# include = ["flr_challenge*"]
+# namespaces = false
+
+[tool.setuptools.dynamic]
+version = { attr = "flr_challenge.__version__.__version__" }
+dependencies = { file = "./requirements.txt" }
+
+[tool.setuptools.dynamic.optional-dependencies]
+# Options dependencies for DEVELOPMENT
+test = { file = ["./requirements/requirements.test.txt"] }
+build = { file = ["./requirements/requirements.build.txt"] }
+redteam = { file = ["./requirements/requirements.redteam.txt"] }
+api = { file = [
+	"./src/flr_challenge/challenge/requirements.txt",
+] }
+dev = { file = [
+	"./requirements/requirements.test.txt",
+	"./requirements/requirements.build.txt",
+	"./requirements/requirements.dev.txt",
+	# "./requirements/requirements.redteam.txt",
+	"./src/flr_challenge/challenge/requirements.txt",
+] }
+
+# [tool.pyright]
+# venvPath = "."
+# venv = ".venv"
+
+[project.urls]
+Homepage = "https://github.com/RedTeamSubnet/challenge-template"
+Documentation = "https://docs.theredteam.io"
+Repository = "https://github.com/RedTeamSubnet/challenge-template.git"
+Issues = "https://github.com/RedTeamSubnet/challenge-template/issues"
+Changelog = "https://github.com/RedTeamSubnet/challenge-template/blob/main/CHANGELOG.md"

@@ -1,0 +1,132 @@
+from http import HTTPStatus
+from typing import Any
+
+from pydantic import validate_call
+from starlette.background import BackgroundTask
+from fastapi import Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
+from potato_util.http import get_http_status
+from potato_util.http.fastapi import get_relative_url
+
+from api.__version__ import __version__
+from api.config import config
+from api.core.schemas import BaseResPM
+
+
+class BaseResponse(JSONResponse):
+    """Base response class for most of the API responses with JSON format.
+    Based on BaseResPM schema.
+
+    Inherits:
+        JSONResponse: JSON response class from FastAPI.
+    """
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    def __init__(
+        self,
+        content: Any = None,
+        status_code: int = 200,
+        headers: dict[str, str] | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+        request: Request | None = None,
+        message: str | None = None,
+        links: dict[str, Any] | None = None,
+        meta: dict[str, Any] | None = None,
+        error: Any = None,
+        response_schema: type[BaseResPM] = BaseResPM,
+    ) -> None:
+        """Constructor method for BaseResponse class.
+        This will prepare the most response data and pass it to `JSONResponse` parent class constructor.
+
+        Args:
+            content         (Any                   , optional): Main data content for response. Defaults to None.
+            status_code     (int | None            , optional): HTTP status code: [100 <= status_code <= 599].
+                                                                    Defaults to 200.
+            headers         (dict[str, str] | None , optional): HTTP headers. Defaults to None.
+            media_type      (str | None            , optional): Media type for 'Content-Type' header. Defaults to None.
+            background      (BackgroundTask | None , optional): Background task. Defaults to None.
+            request         (Request | None        , optional): Request object from FastAPI. Defaults to None.
+            message         (str | None            , optional): Message for response: [1 <= len(message) <= 256].
+                                                                    Defaults to None.
+            links           (dict[str, Any] | None , optional): Links for response. Defaults to None.
+            meta            (dict[str, Any] | None , optional): Meta data for response. Defaults to None.
+            error           (Any                   , optional): Error data for response. Defaults to None.
+            response_schema (type[BaseResPM] | None, optional): Response schema type. Defaults to `Type[BaseResPM]`.
+        """
+
+        _http_status: HTTPStatus
+        _http_status, _ = get_http_status(status_code=status_code)
+
+        if not message:
+            if error and isinstance(error, dict) and ("message" in error):
+                message = str(error["message"])
+            else:
+                message = _http_status.phrase
+
+        if not links:
+            links = {}
+
+        if not meta:
+            meta = {}
+
+        if not headers:
+            headers = {}
+
+        if request:
+            _request_id: str = request.state.request_id
+
+            links["self"] = f"{get_relative_url(request)}"
+            meta["method"] = request.method
+            meta["base_url"] = str(request.base_url)[:-1]
+
+            if "X-Request-Id" not in headers:
+                headers["X-Request-Id"] = _request_id
+
+        headers["X-API-Version"] = config.api.version
+        headers["X-System-Version"] = __version__
+
+        if error and isinstance(error, dict):
+            if ("code" in error) and ("X-Error-Code" not in headers):
+                headers["X-Error-Code"] = error.get("code", f"{status_code}_00000")
+
+            if (not config.debug) and (500 <= status_code) and ("detail" in error):
+                error["detail"] = None
+
+        if (not error) and (400 <= status_code) and _http_status.description:
+            error = f"{_http_status.description}!"
+
+        if (400 <= status_code) and ("X-Error-Code" not in headers):
+            headers["X-Error-Code"] = f"{status_code}_00000"
+
+        if 500 <= status_code:
+            if "Cache-Control" not in headers:
+                headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+
+            if "Pragma" not in headers:
+                headers["Pragma"] = "no-cache"
+
+            if "Expires" not in headers:
+                headers["Expires"] = "0"
+
+            if (status_code == 503) and ("Retry-After" not in headers):
+                headers["Retry-After"] = "1800"
+
+        _response_pm = response_schema(
+            message=message, data=content, links=links, meta=meta, error=error  # type: ignore
+        )
+        _content = jsonable_encoder(obj=_response_pm, by_alias=True)
+
+        super().__init__(
+            content=_content,
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type,
+            background=background,
+        )
+        return
+
+
+__all__ = ["BaseResponse"]
