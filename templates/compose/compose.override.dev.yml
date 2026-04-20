@@ -12,11 +12,11 @@ services:
     #       cpus: "0.5"
     #       memory: 512M
     # ports: !override
-    #   - "10001-10003:${FLR_CHALLENGE_API_PORT:-10001}"
+    #   - "10001-10003:${FLR_API_PORT:-10001}"
     # command: ["/bin/bash"]
-    # command: ["-b", "uvicorn api.main:app --host=0.0.0.0 --port=${FLR_CHALLENGE_API_PORT:-10001} --no-access-log --no-server-header --proxy-headers --forwarded-allow-ips='*' --reload"]
+    # command: ["-b", "uvicorn api.main:app --host=0.0.0.0 --port=${FLR_API_PORT:-10001} --no-access-log --no-server-header --proxy-headers --forwarded-allow-ips='*' --reload"]
     # healthcheck:
-    #   test: ["CMD-SHELL", "curl -f http://localhost:${FLR_CHALLENGE_API_PORT:-10001}/ping"]
+    #   test: ["CMD-SHELL", "curl -f http://localhost:${FLR_API_PORT:-10001}/ping"]
     #   start_period: 30s
     #   start_interval: 1s
     #   interval: 5m
@@ -37,6 +37,6 @@ services:
     volumes:
       - "./examples/miner_commit/src:/app"
     ports:
-      - ${FLR_CHALLENGE_MINER_COMMIT_API_PORT:-10002}:${FLR_CHALLENGE_MINER_COMMIT_API_PORT:-10002}
-    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "${FLR_CHALLENGE_MINER_COMMIT_API_PORT:-10002}", "--reload"]
+      - ${FLR_MINER_COMMIT_API_PORT:-10002}:${FLR_MINER_COMMIT_API_PORT:-10002}
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "${FLR_MINER_COMMIT_API_PORT:-10002}", "--reload"]
     tty: true

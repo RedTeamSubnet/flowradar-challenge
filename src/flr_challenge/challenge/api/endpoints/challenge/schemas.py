@@ -9,7 +9,7 @@ from potato_util.generator import gen_random_string
 from api.config import config
 from api.logger import logger
 
-api_dir = os.environ.get("FLR_CHALLENGE_API_DIR", "/app/historical_fingerprinter")
+api_dir = os.environ.get("FLR_API_DIR", "/app/historical_fingerprinter")
 _submission_path = Path(os.path.join(api_dir, "fingerprinter", "src", "submissions"))
 _frameworks_names = config.challenge.submission_fns
 _detection_files: dict[list[dict[str, Any]]] = {"commit_files": []}

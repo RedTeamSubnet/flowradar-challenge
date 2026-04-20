@@ -2,7 +2,7 @@
 set -euo pipefail
 
 
-echo "[INFO]: Running '${FLR_CHALLENGE_API_SLUG}' docker-entrypoint.sh..."
+echo "[INFO]: Running '${FLR_API_SLUG}' docker-entrypoint.sh..."
 
 
 _run()
@@ -11,7 +11,7 @@ _run()
 	exec gosu "${USER}:${GROUP}" python -m api || exit 2
 	# exec gosu "${USER}:${GROUP}" uvicorn api.main:app \
 	# 	--host=0.0.0.0 \
-	# 	--port=${FLR_CHALLENGE_API_PORT:-10001} \
+	# 	--port=${FLR_API_PORT:-10001} \
 	# 	--no-access-log \
 	# 	--no-server-header \
 	# 	--proxy-headers \
@@ -24,11 +24,11 @@ main()
 {
 	umask 0002 || exit 2
 
-	find "${FLR_CHALLENGE_HOME_DIR}" \
-		"${FLR_CHALLENGE_API_CONFIGS_DIR}" \
-		"${FLR_CHALLENGE_API_DATA_DIR}" \
-		"${FLR_CHALLENGE_API_LOGS_DIR}" \
-		"${FLR_CHALLENGE_API_TMP_DIR}" \
+	find "${FLR_HOME_DIR}" \
+		"${FLR_API_CONFIGS_DIR}" \
+		"${FLR_API_DATA_DIR}" \
+		"${FLR_API_LOGS_DIR}" \
+		"${FLR_API_TMP_DIR}" \
 		\( \
 			-type d -name ".git" -o \
 			-type d -name ".venv" -o \
@@ -40,7 +40,7 @@ main()
 		\) -prune -o -print0 | \
 			xargs -0 chown -c "${USER}:${GROUP}" || exit 2
 
-	find "${FLR_CHALLENGE_API_DIR}" "${FLR_CHALLENGE_API_CONFIGS_DIR}" "${FLR_CHALLENGE_API_DATA_DIR}" \
+	find "${FLR_API_DIR}" "${FLR_API_CONFIGS_DIR}" "${FLR_API_DATA_DIR}" \
 		\( \
 			-type d -name ".git" -o \
 			-type d -name ".venv" -o \
@@ -52,7 +52,7 @@ main()
 		 \) -prune -o -type d -exec \
 			chmod 770 {} + || exit 2
 
-	find "${FLR_CHALLENGE_API_DIR}" "${FLR_CHALLENGE_API_CONFIGS_DIR}" "${FLR_CHALLENGE_API_DATA_DIR}" \
+	find "${FLR_API_DIR}" "${FLR_API_CONFIGS_DIR}" "${FLR_API_DATA_DIR}" \
 		\( \
 			-type d -name ".git" -o \
 			-type d -name ".venv" -o \
@@ -65,7 +65,7 @@ main()
 		\) -prune -o -type f -exec \
 			chmod 660 {} + || exit 2
 
-	find "${FLR_CHALLENGE_API_DIR}" "${FLR_CHALLENGE_API_CONFIGS_DIR}" "${FLR_CHALLENGE_API_DATA_DIR}" \
+	find "${FLR_API_DIR}" "${FLR_API_CONFIGS_DIR}" "${FLR_API_DATA_DIR}" \
 		\( \
 			-type d -name ".git" -o \
 			-type d -name ".venv" -o \
@@ -77,9 +77,9 @@ main()
 		\) -prune -o -type d -exec \
 			chmod ug+s {} + || exit 2
 
-	find "${FLR_CHALLENGE_API_LOGS_DIR}" "${FLR_CHALLENGE_API_TMP_DIR}" -type d -exec chmod 775 {} + || exit 2
-	find "${FLR_CHALLENGE_API_LOGS_DIR}" "${FLR_CHALLENGE_API_TMP_DIR}" -type f -exec chmod 664 {} + || exit 2
-	find "${FLR_CHALLENGE_API_LOGS_DIR}" "${FLR_CHALLENGE_API_TMP_DIR}" -type d -exec chmod +s {} + || exit 2
+	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type d -exec chmod 775 {} + || exit 2
+	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type f -exec chmod 664 {} + || exit 2
+	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type d -exec chmod +s {} + || exit 2
 
 	# echo "${USER} ALL=(ALL) ALL" | tee -a "/etc/sudoers.d/${USER}" > /dev/null || exit 2
 	echo ""

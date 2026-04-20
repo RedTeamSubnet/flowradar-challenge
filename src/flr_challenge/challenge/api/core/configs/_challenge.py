@@ -13,7 +13,7 @@ from pydantic_settings import SettingsConfigDict
 from api.core.constants import ENV_PREFIX
 from ._base import BaseConfig
 
-_API_DIR_ENV = "FLR_CHALLENGE_API_DIR"
+_API_DIR_ENV = "FLR_API_DIR"
 _DEFAULT_API_DIR = "/app/historical_fingerprinter"
 
 
@@ -35,7 +35,7 @@ class FingerpinterContainerConfig(BaseModel):
         default="{api_dir}/fingerprinter",
         description=(
             "Path to the fingerprinter build context. "
-            "Use {api_dir} as a placeholder to expand against FLR_CHALLENGE_API_DIR."
+            "Use {api_dir} as a placeholder to expand against FLR_API_DIR."
         ),
     )
 

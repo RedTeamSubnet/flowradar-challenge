@@ -150,17 +150,17 @@ DEBUG=false
 
 
 ## -- API configs -- ##
-FLR_CHALLENGE_API_PORT=10001
-# FLR_CHALLENGE_API_CONFIGS_DIR="/etc/flowradar-challenge"
-# FLR_CHALLENGE_API_LOGS_DIR="/var/log/flowradar-challenge"
-# FLR_CHALLENGE_API_DATA_DIR="/var/lib/flowradar-challenge"
-# FLR_CHALLENGE_API_TMP_DIR="/tmp/flowradar-challenge"
-# FLR_CHALLENGE_API_VERSION="1"
-# FLR_CHALLENGE_API_PREFIX=""
-# FLR_CHALLENGE_API_DOCS_ENABLED=true
-# FLR_CHALLENGE_API_DOCS_OPENAPI_URL="{api_prefix}/openapi.json"
-# FLR_CHALLENGE_API_DOCS_DOCS_URL="{api_prefix}/docs"
-# FLR_CHALLENGE_API_DOCS_REDOC_URL="{api_prefix}/redoc"
+FLR_API_PORT=10001
+# FLR_API_CONFIGS_DIR="/etc/flowradar-challenge"
+# FLR_API_LOGS_DIR="/var/log/flowradar-challenge"
+# FLR_API_DATA_DIR="/var/lib/flowradar-challenge"
+# FLR_API_TMP_DIR="/tmp/flowradar-challenge"
+# FLR_API_VERSION="1"
+# FLR_API_PREFIX=""
+# FLR_API_DOCS_ENABLED=true
+# FLR_API_DOCS_OPENAPI_URL="{api_prefix}/openapi.json"
+# FLR_API_DOCS_DOCS_URL="{api_prefix}/docs"
+# FLR_API_DOCS_REDOC_URL="{api_prefix}/redoc"
 ```
 
 ---
