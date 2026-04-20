@@ -102,7 +102,7 @@ class ChallengeConfig(BaseConfig):
     @model_validator(mode="after")
     def _check_all(self) -> Self:
         DATA_DIR = os.getenv(
-            f"{ENV_PREFIX}CHALLENGE_API_DATA_DIR", "/var/lib/historical_fingerprinter/"
+            f"{ENV_PREFIX}CHALLENGE_API_DATA_DIR", "/var/lib/flowradar-challenge"
         )
         if not os.path.isdir(DATA_DIR):
             os.makedirs(DATA_DIR, exist_ok=True)
