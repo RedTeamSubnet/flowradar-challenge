@@ -30,7 +30,6 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
     runtime_seconds = 0.0
     payload_manager.restart_manager()
     _request_miss_counter = 0
-    _correct_predictions = 0
     container = None
 
     scoring_status_manager.set_scoring_status(ScoringStatus.SCORING)
@@ -107,12 +106,6 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                             expected_is_vpn=str(expected_is_vpn),
                             request_id=result.get("request_id"),
                         )
-
-                        # Calculate score based on correctness
-                        if expected_is_vpn is not None:
-                            if bool(is_vpn) == bool(expected_is_vpn):
-                                _correct_predictions += 1
-                                payload_manager.correct_count += 1
                     else:
                         _request_miss_counter += 1
                         logger.warning(
@@ -132,8 +125,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             runtime_seconds = time.perf_counter() - runtime_start
 
             logger.info(
-                f"[{request_id}] - Fingerprinting completed. Stored {payload_manager.payload_count()} fingerprints. "
-                f"Correct predictions: {_correct_predictions}"
+                f"[{request_id}] - Fingerprinting completed. Stored {payload_manager.payload_count()} fingerprints."
             )
 
             final_score = payload_manager.calculate_score()

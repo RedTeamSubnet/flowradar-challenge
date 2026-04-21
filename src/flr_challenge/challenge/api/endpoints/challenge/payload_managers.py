@@ -49,11 +49,9 @@ class ScoringTelemetryManager:
 class PayloadManager:
     def __init__(self):
         self.payloads: list[dict] = []
-        self.correct_count: int = 0
 
     def restart_manager(self) -> None:
         self.payloads = []
-        self.correct_count = 0
 
     def store_payload(
         self, row_id: str, is_vpn: str, expected_is_vpn: str, request_id: str = None
@@ -78,14 +76,41 @@ class PayloadManager:
             logger.warning("No payloads to score")
             return 0.0
 
+        # Use local variables to calculate TP, FP, TN, FN
+        tp = fp = tn = fn = 0
+        for payload in self.payloads:
+            predicted_vpn = bool(payload["is_vpn"] == "True")
+            actual_vpn = bool(payload["expected_is_vpn"] == "True")
+
+            if predicted_vpn and actual_vpn:
+                tp += 1
+            elif predicted_vpn and not actual_vpn:
+                fp += 1
+            elif not predicted_vpn and not actual_vpn:
+                tn += 1
+            else:  # not predicted_vpn and actual_vpn
+                fn += 1
+
         total_count = len(self.payloads)
-        logger.info(f"Total predictions: {total_count}, Correct: {self.correct_count}")
+        logger.info(
+            f"Total predictions: {total_count}, TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}"
+        )
 
         if total_count == 0:
             return 0.0
 
-        final_score = self.correct_count / total_count
-        return round(final_score, 3)
+        # Calculate Precision, Recall, F1
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+        if precision + recall == 0:
+            f1 = 0.0
+        else:
+            f1 = 2 * (precision * recall) / (precision + recall)
+
+        logger.info(f"Precision: {precision:.3f}, Recall: {recall:.3f}, F1: {f1:.3f}")
+
+        return round(f1, 3)
 
 
 class ScoringStatus(str, Enum):
