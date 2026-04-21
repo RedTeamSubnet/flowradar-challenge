@@ -76,7 +76,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             if "is_vpn" in df.columns:
                 ground_truth = df["is_vpn"].copy()
                 df = df.drop(columns=["is_vpn"])
-
+            _request_session = requests.Session()
             for index, row in df.iterrows():
                 row_data = row.to_dict()
                 expected_is_vpn = None
@@ -86,7 +86,8 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                     expected_is_vpn = ground_truth[index]
 
                 try:
-                    resp = requests.post(
+
+                    resp = _request_session.post(
                         f"{base_url}/fingerprint",
                         json={"products": row_data},
                         timeout=config.challenge.single_request_timeout,
@@ -127,6 +128,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                         f"[{request_id}] - Exceeded max request misses. Stopping fingerprinting."
                     )
                     break
+            _request_session.close()
             runtime_seconds = time.perf_counter() - runtime_start
 
             logger.info(
