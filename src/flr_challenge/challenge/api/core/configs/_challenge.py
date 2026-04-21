@@ -87,7 +87,7 @@ class ChallengeConfig(BaseConfig):
     )
     flowradar_port: int = Field(default=8000, ge=1, le=65535)
     metrics_csv_path: str = Field(
-        "{data_dir}/test_vpn_data.csv",
+        "{data_dir}/metrics.csv",
         strip_whitespace=True,
         min_length=2,
         max_length=256,
