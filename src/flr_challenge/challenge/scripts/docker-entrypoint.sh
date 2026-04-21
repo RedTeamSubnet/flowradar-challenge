@@ -8,14 +8,16 @@ echo "[INFO]: Running '${FLR_API_SLUG}' docker-entrypoint.sh..."
 _run()
 {
 	echo "[INFO]: Starting FastAPI server..."
-	exec gosu "${USER}:${GROUP}" python -m api || exit 2
-	# exec gosu "${USER}:${GROUP}" uvicorn api.main:app \
-	# 	--host=0.0.0.0 \
-	# 	--port=${FLR_API_PORT:-10001} \
-	# 	--no-access-log \
-	# 	--no-server-header \
-	# 	--proxy-headers \
-	# 	--forwarded-allow-ips='*' || exit 2
+	sudo service docker start || exit 2
+	sleep 2
+	# exec gosu "${USER}:${GROUP}" sg docker "exec python -m api"|| exit 2
+	exec gosu "${USER}:${GROUP}" sg docker "exec uvicorn api.main:app \
+		--host=0.0.0.0 \
+		--port=${FLR_API_PORT:-10001} \
+		--no-access-log \
+		--no-server-header \
+		--proxy-headers \
+		--forwarded-allow-ips='*' "|| exit 2
 	exit 0
 }
 
@@ -96,7 +98,7 @@ main()
 				exec gosu "${USER}:${GROUP}" /bin/bash
 			else
 				echo "[INFO]: Executing command -> ${*}"
-				exec gosu "${USER}:${GROUP}" /bin/bash -c "$@" || exit 2
+				exec gosu "${USER}:${GROUP}" /bin/bash -c "${@}" || exit 2
 			fi
 			exit 0;;
 		*)
@@ -106,4 +108,4 @@ main()
 	esac
 }
 
-main "$@"
+main "${@:-}"

@@ -496,7 +496,7 @@ zsdoc/data
 **/__pycache__
 **/.venv
 **/.classpath
-**/.dockerignore
+# **/.dockerignore
 **/.env
 **/.git
 **/.gitignore
@@ -512,7 +512,7 @@ zsdoc/data
 **/charts
 **/docker-compose*
 **/compose.y*ml
-**/Dockerfile*
+# **/Dockerfile*
 **/node_modules
 **/npm-debug.log
 **/obj
@@ -539,7 +539,7 @@ README.md
 **/modules
 **/volumes
 **/*.egg-info
-**/.dockerignore
+# **/.dockerignore
 **/.editorconfig
 **/.env.example
 **/.gitkeep
@@ -550,7 +550,7 @@ README.md
 **/CHANGELOG.md
 **/compose.sh
 **/compose.override.y*ml
-**/Dockerfile*
+# **/Dockerfile*
 **/Makefile
 **/mkdocs.yml
 **/pm2-process.json*

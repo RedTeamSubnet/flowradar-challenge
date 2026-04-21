@@ -14,7 +14,7 @@ from api.core.constants import ENV_PREFIX
 from ._base import BaseConfig
 
 _API_DIR_ENV = "FLR_API_DIR"
-_DEFAULT_API_DIR = "/app/historical_fingerprinter"
+_DEFAULT_API_DIR = "/app/flowradar-challenge"
 
 
 class ChallengeStatusEnum(str, Enum):

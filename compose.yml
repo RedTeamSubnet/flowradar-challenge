@@ -3,7 +3,8 @@ services:
     image: redteamsubnet61/flowradar-challenge:0.0.0
     build:
       context: ./src/flr_challenge/challenge
-    platform: linux/amd64
+    # platform: linux/amd64
+    privileged: true
     restart: unless-stopped
     environment:
       TERM: ${TERM:-xterm}

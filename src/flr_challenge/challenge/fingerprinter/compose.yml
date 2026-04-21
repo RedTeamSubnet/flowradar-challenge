@@ -1,0 +1,13 @@
+services:
+  miner-api:
+    image: myhub/rest-hfp-commit:latest
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      TERM: ${TERM:-xterm}
+      TZ: ${TZ:-UTC}
+      PORT: 8000
+    ports:
+      - 8000:8000
+    tty: true
