@@ -144,7 +144,7 @@ FROM base AS app
 WORKDIR "${FLR_API_DIR}"
 COPY --chown=${UID}:${GID} ./api ${FLR_API_DIR}/api
 COPY --chown=${UID}:${GID} --chmod=770 ./scripts/*.sh /usr/local/bin/
-COPY --chown=${UID}:${GID} ./fingerprinter ${FLR_API_DIR}/fingerprinter
+COPY --chown=${UID}:${GID} ./flowradar ${FLR_API_DIR}/flowradar
 # VOLUME ["${FLR_API_DATA_DIR}"]
 # EXPOSE ${FLR_API_PORT}
 

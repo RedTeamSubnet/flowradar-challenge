@@ -32,9 +32,9 @@ class FingerpinterContainerConfig(BaseModel):
     network_name: str = Field(default="internal_net")
     image: str = Field(default="redteamsubnet61/flr_collector:latest")
     build_path: str = Field(
-        default="{api_dir}/fingerprinter",
+        default="{api_dir}/flowradar",
         description=(
-            "Path to the fingerprinter build context. "
+            "Path to the flowradar build context. "
             "Use {api_dir} as a placeholder to expand against FLR_API_DIR."
         ),
     )
@@ -82,12 +82,15 @@ class ChallengeConfig(BaseConfig):
     api_key: SecretStr = Field(..., min_length=8, max_length=128)
     single_request_timeout: float = Field(default=2, ge=0)
     acceptable_miss_count: int = Field(default=10, ge=0)
-    fingerprinter_ip: str = Field(
+    flowradar_ip: str = Field(
         "127.0.0.1", strip_whitespace=True, min_length=7, max_length=15
     )
-    fingerprinter_port: int = Field(default=8000, ge=1, le=65535)
+    flowradar_port: int = Field(default=8000, ge=1, le=65535)
     metrics_csv_path: str = Field(
-        "{data_dir}/metrics.csv", strip_whitespace=True, min_length=2, max_length=256
+        "{data_dir}/test_vpn_data.csv",
+        strip_whitespace=True,
+        min_length=2,
+        max_length=256,
     )
     submission_fns: list[str] = Field(
         default=["initializer", "metrics_collector", "linker"], min_items=1

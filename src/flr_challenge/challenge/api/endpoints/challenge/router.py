@@ -40,7 +40,7 @@ def get_results(request: Request):
     _request_id = request.state.request_id
     logger.info(f"[{_request_id}] - Getting results...")
 
-    results = payload_manager.get_fingerprints()
+    results = payload_manager.get_payload()
     return results
 
 

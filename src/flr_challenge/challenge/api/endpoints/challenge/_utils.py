@@ -28,9 +28,9 @@ def ensure_network_exists() -> None:
 
 
 def wait_for_health(
-    ip_address: str, timeout: int = 100, fingerprinter_port: int = 8000
+    ip_address: str, timeout: int = 100, flowradar_port: int = 8000
 ) -> None:
-    url = f"http://{ip_address}:{fingerprinter_port}/health"
+    url = f"http://{ip_address}:{flowradar_port}/health"
     start = time.time()
     while time.time() - start < timeout:
         try:
@@ -59,25 +59,24 @@ def _ensure_image(client: docker.DockerClient) -> None:
             )
 
 
-def run_fingerprinter_container(
-    request_id: str, files_dir: str, fingerprinter_port: int = 8000
+def run_flowradar_container(
+    request_id: str, file_path: str, flowradar_port: int = 8000
 ) -> tuple[docker.models.containers.Container, str]:
     client = docker.from_env()
     ensure_network_exists()
     _ensure_image(client)
 
-    container_name = f"fingerprinter_{request_id}"
+    container_name = f"flowradar_{request_id}"
 
     volumes = {}
-    for file_name in os.listdir(files_dir):
-        file_path = os.path.join(files_dir, file_name)
-        target_path = f"/app/submissions/{file_name}"
-        volumes[file_path] = {"bind": target_path, "mode": "ro"}
+
+    target_path = f"/app/submissions/submission.py"
+    volumes[file_path] = {"bind": target_path, "mode": "ro"}
     container = client.containers.run(
         config.challenge.fp_container.image,
         detach=True,
         network=config.challenge.fp_container.network_name,
-        environment={"PORT": str(fingerprinter_port)},
+        environment={"PORT": str(flowradar_port)},
         volumes=volumes,
         name=container_name,
     )
@@ -138,7 +137,7 @@ def get_container_network_stats(
 __all__ = [
     "ensure_network_exists",
     "wait_for_health",
-    "run_fingerprinter_container",
+    "run_flowradar_container",
     "cleanup_container",
     "stream_container_logs",
     "start_log_streaming_thread",

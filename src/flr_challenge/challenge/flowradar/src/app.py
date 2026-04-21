@@ -1,12 +1,11 @@
 import sys
 import logging
-from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Body, HTTPException, Request
 
-from data_types import FingerprintInput, FingerprintOutput
-from submissions import initialize_db, generate_and_link, preprocess_metrics
+from data_types import VPNDetectionInput, VPNDetectionOutput
+from submissions import detect_vpn
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -17,16 +16,7 @@ logging.basicConfig(
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    app.state.db = initialize_db()
-    logger.info("Database connection initialized")
-    yield
-    app.state.db.close()
-    logger.info("Database connection closed")
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 @app.get("/health")
@@ -34,10 +24,10 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/fingerprint", response_model=FingerprintOutput)
+@app.post("/fingerprint", response_model=VPNDetectionOutput)
 def fingerprint(
-    request: Request, fingerprint_input: FingerprintInput = Body(...)
-) -> FingerprintOutput:
+    request: Request, vpn_input: VPNDetectionInput = Body(...)
+) -> VPNDetectionOutput:
     logger.info("Processing fingerprint request...")
     # Generate a unique request ID for tracing
     _request_id: str = uuid4().hex
@@ -46,13 +36,10 @@ def fingerprint(
     elif "X-Correlation-ID" in request.headers:
         _request_id: str = request.headers.get("X-Correlation-ID", _request_id)
     try:
-        payload = preprocess_metrics(fingerprint_input.products)
-        result = generate_and_link(payload, app.state.db)
+        is_vpn = detect_vpn(vpn_input.products)
 
-        return FingerprintOutput(
-            fingerprint=result["fingerprint"],
-            is_new=result["is_new"],
-            payload=payload,
+        return VPNDetectionOutput(
+            is_vpn=is_vpn,
             request_id=_request_id,
         )
     except Exception as err:
