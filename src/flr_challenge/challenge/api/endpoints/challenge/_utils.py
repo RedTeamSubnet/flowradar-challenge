@@ -41,7 +41,7 @@ def wait_for_health(
             logger.warning(f"Error occurred while checking health: {e}")
         time.sleep(1)
     raise TimeoutError(
-        f"Fingerprinter container health check timed out after {timeout}s in this url: {url}"
+        f"Detector container health check timed out after {timeout}s in this url: {url}"
     )
 
 
@@ -99,14 +99,14 @@ def cleanup_container(container: docker.models.containers.Container) -> None:
 
 
 def stream_container_logs(
-    container: docker.models.containers.Container, prefix: str = "[FINGERPRINTER]"
+    container: docker.models.containers.Container, prefix: str = "[DETECTOR]"
 ) -> None:
     for log_line in container.logs(stream=True, follow=True):
         logger.debug(f"{prefix} {log_line.decode('utf-8').strip()}")
 
 
 def start_log_streaming_thread(
-    container: docker.models.containers.Container, prefix: str = "[FINGERPRINTER]"
+    container: docker.models.containers.Container, prefix: str = "[DETECTOR]"
 ) -> Thread:
     thread = Thread(target=stream_container_logs, args=(container, prefix), daemon=True)
     thread.start()

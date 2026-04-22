@@ -57,14 +57,12 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             _utils.start_log_streaming_thread(container)
 
             config.challenge.flowradar_ip = ip_address
-            logger.info(
-                f"[{request_id}] - Fingerprinter container started at {ip_address}"
-            )
+            logger.info(f"[{request_id}] - Detector container started at {ip_address}")
 
             _utils.wait_for_health(
                 ip_address, flowradar_port=config.challenge.flowradar_port
             )
-            logger.info(f"[{request_id}] - Fingerprinter container is healthy")
+            logger.info(f"[{request_id}] - Detector container is healthy")
 
             base_url = f"http://{ip_address}:{config.challenge.flowradar_port}"
             df = pd.read_csv(config.challenge.metrics_csv_path)
@@ -87,7 +85,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                 try:
 
                     resp = _request_session.post(
-                        f"{base_url}/fingerprint",
+                        f"{base_url}/vpn_detector",
                         json={"products": row_data},
                         timeout=config.challenge.single_request_timeout,
                     )
@@ -148,7 +146,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
 
             if container:
                 # _utils.cleanup_container(container)
-                logger.info(f"[{request_id}] - Fingerprinter container cleaned up")
+                logger.info(f"[{request_id}] - Detector container cleaned up")
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 
     return final_score

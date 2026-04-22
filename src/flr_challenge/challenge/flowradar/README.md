@@ -1,4 +1,4 @@
-# VPN Detection Fingerprinter
+# VPN Detection
 
 Fingerprint-based VPN detection API using network flow features.
 
@@ -13,11 +13,11 @@ This project provides an API that processes network flow data to detect if the t
 
 ## Key Components
 
-| File             | Description                                        |
-| ---------------- | -------------------------------------------------- |
-| `submissions.py` | VPN detection logic (heuristics)                  |
-| `app.py`         | FastAPI application and endpoints                 |
-| `data_types.py`  | Pydantic models for input/output                   |
+| File             | Description                       |
+| ---------------- | --------------------------------- |
+| `submissions.py` | VPN detection logic (heuristics)  |
+| `app.py`         | FastAPI application and endpoints |
+| `data_types.py`  | Pydantic models for input/output  |
 
 ## API Endpoints
 

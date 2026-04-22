@@ -24,7 +24,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/fingerprint", response_model=VPNDetectionOutput)
+@app.post("/vpn_detector", response_model=VPNDetectionOutput)
 def fingerprint(
     request: Request, vpn_input: VPNDetectionInput = Body(...)
 ) -> VPNDetectionOutput:
