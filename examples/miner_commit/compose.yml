@@ -1,9 +1,10 @@
 services:
   miner-api:
-    image: myhub/rest-flr-commit:latest
+    image: redteamsubnet61/flowradar-submission_template:latest
     build:
       context: .
     restart: unless-stopped
+    platform: linux/amd64
     environment:
       TERM: ${TERM:-xterm}
       TZ: ${TZ:-UTC}
