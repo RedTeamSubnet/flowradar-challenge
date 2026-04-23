@@ -68,6 +68,39 @@ class PayloadManager:
     def get_payload(self) -> list[dict]:
         return self.payloads
 
+    def get_feedback(self) -> dict:
+        if not self.payloads:
+            return {
+                "true_positive": 0,
+                "true_negative": 0,
+                "false_positive": 0,
+                "false_negative": 0,
+            }
+
+        tp = fp = tn = fn = 0
+        for payload in self.payloads:
+            predicted_vpn = bool(payload["is_vpn"] == "True")
+            actual_vpn = bool(payload["expected_is_vpn"] == "True")
+
+            if predicted_vpn and actual_vpn:
+                tp += 1
+            elif predicted_vpn and not actual_vpn:
+                fp += 1
+            elif not predicted_vpn and not actual_vpn:
+                tn += 1
+            else:
+                fn += 1
+
+        return {
+            "true_positive": tp,
+            "true_negative": tn,
+            "false_positive": fp,
+            "false_negative": fn,
+        }
+
+    def get_payload_with_feedback(self) -> dict:
+        return {"payload": self.payloads, "feedback": self.get_feedback()}
+
     def payload_count(self) -> int:
         return len(self.payloads)
 

@@ -41,7 +41,8 @@ def get_results(request: Request):
     logger.info(f"[{_request_id}] - Getting results...")
 
     results = payload_manager.get_payload()
-    return results
+    feedback = payload_manager.get_feedback()
+    return {"payload": results, "feedback": feedback}
 
 
 @router.get(
