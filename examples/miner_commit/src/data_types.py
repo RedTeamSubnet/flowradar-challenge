@@ -12,26 +12,8 @@ class MinerInput(BaseModel):
     )
 
 
-class CommitFilePM(BaseModel):
-    file_name: str = Field(
-        ...,
-        min_length=4,
-        max_length=64,
-        title="File Name",
-        description="Name of the file.",
-        examples=["solution.js"],
-    )
-    content: str = Field(
-        ...,
-        min_length=2,
-        title="File Content",
-        description="Content of the file as a string.",
-        examples=["console.log('Challenge accepted!');"],
-    )
-
-
 class MinerOutput(BaseModel):
-    commit_files: list[CommitFilePM] = Field(
+    commit_files: str = Field(
         ...,
         title="Commit Files",
         description="List of Commit files for the challenge.",
@@ -39,19 +21,17 @@ class MinerOutput(BaseModel):
 
     @field_validator("commit_files", mode="after")
     @classmethod
-    def _check_commit_files(cls, val: list[CommitFilePM]) -> list[CommitFilePM]:
-        for _miner_file_pm in val:
-            _content_lines = _miner_file_pm.content.splitlines()
-            if len(_content_lines) > 500:
-                raise ValueError(
-                    f"`{_miner_file_pm.file_name}` file contains too many lines, should be <= 500 lines!"
-                )
+    def _check_commit_files(cls, val: str) -> str:
+        _content_lines = val.splitlines()
+        if len(_content_lines) > 1000:
+            raise ValueError(
+                f"Commit files contain too many lines, should be <= 1000 lines!"
+            )
 
         return val
 
 
 __all__ = [
     "MinerInput",
-    "CommitFilePM",
     "MinerOutput",
 ]
