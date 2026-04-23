@@ -30,26 +30,8 @@ class MinerInput(BaseModel):
     )
 
 
-class CommitFilePM(BaseModel):
-    file_name: str = Field(
-        ...,
-        min_length=4,
-        max_length=64,
-        title="File Name",
-        description="Name of the file.",
-        examples=["solution.js"],
-    )
-    content: str = Field(
-        ...,
-        min_length=2,
-        title="File Content",
-        description="Content of the file as a string.",
-        examples=["console.log('Challenge accepted!');"],
-    )
-
-
 class MinerOutput(BaseModel):
-    submission_py: str = Field(
+    commit_files: str = Field(
         ...,
         title="Submission Python File",
         description="The content of the submission Python file as a string.",
@@ -62,7 +44,7 @@ class MinerOutput(BaseModel):
         ],
     )
 
-    @field_validator("submission_py", mode="after")
+    @field_validator("commit_files", mode="after")
     @classmethod
     def _check_submission_py(cls, val: str) -> str:
         """

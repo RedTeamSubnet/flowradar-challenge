@@ -41,7 +41,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
 
         file_path = os.path.join(tmp_dir, "submission.py")
         with open(file_path, "w") as f:
-            f.write(miner_output.submission_py)
+            f.write(miner_output.commit_files)
         total_file_size += os.path.getsize(file_path)
 
         logger.info(
