@@ -5,7 +5,7 @@ import requests
 
 import bittensor as bt
 
-from redteam_core.challenge_pool.controller import Controller
+from redteam_core.challenge_pool.controller import ComparisonLog, Controller
 from redteam_core.validator.models import MinerChallengeCommit
 
 
@@ -117,6 +117,51 @@ class FLRController(Controller):
         with open(result_file_path, "w") as f:
             f.write(json.dumps(result_payload, indent=4))
         bt.logging.info(f"[CONTROLLER] Result saved to {result_file_path}")
+
+    def same_score_comparison(self, miner_commit: MinerChallengeCommit) -> None:
+        if not miner_commit.scoring_logs:
+            bt.logging.warning(
+                f"[CONTROLLER] No scoring logs found for miner {miner_commit.miner_hotkey}, skipping same score comparison."
+            )
+        _scoring_log = miner_commit.scoring_logs[0]
+        _commit_score = _scoring_log.score
+        if _commit_score is None or _commit_score <= 0.9:
+            return
+        reference_commits_in_range = []
+        for ref_commit in self.reference_comparison_commits:
+            if not ref_commit.scoring_logs:
+                continue
+            _ref_score = ref_commit.scoring_logs[0].score
+            if _ref_score is None:
+                continue
+            if abs(_ref_score - _commit_score) <= 0.1:
+                reference_commits_in_range.append(ref_commit)
+        if not reference_commits_in_range:
+            bt.logging.info(
+                f"[CONTROLLER] No reference commits found with score in range for miner {miner_commit.miner_hotkey}, skipping same score comparison."
+            )
+            return
+        for ref_commit in reference_commits_in_range:
+            _comparison_logs = self._compare_same_score_outputs(
+                miner_output=_scoring_log.miner_output,
+                reference_output=ref_commit.scoring_logs[0].miner_output,
+            )
+            if (
+                "similarity_score" in _comparison_logs
+                and _comparison_logs["similarity_score"]
+                >= self.comparison_min_acceptable_score
+            ):
+                _unique_commit_key = (
+                    f"{ref_commit.miner_uid}_{ref_commit.encrypted_commit[:10]}"
+                )
+                miner_commit.comparison_logs[_unique_commit_key] = [
+                    ComparisonLog(
+                        similarity_score=_comparison_logs["similarity_score"],
+                        reason=_comparison_logs.get(
+                            "reason", "similarity score above threshold"
+                        ),
+                    )
+                ]
 
     def _exclude_output_keys(self, miner_output: dict, reference_output: dict) -> None:
         miner_output["commit_files"] = None
