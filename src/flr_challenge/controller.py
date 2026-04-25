@@ -103,16 +103,16 @@ class FLRController(Controller):
     def _save_result_to_data_folder(
         self, result_payload: dict, docker_hub_id: str
     ) -> None:
-        hfp_data_folder = os.environ.get("HFP_CHALLENGE_API_DATA_DIR")
-        if not hfp_data_folder:
+        flr_data_folder = os.environ.get("FLR_API_DATA_DIR")
+        if not flr_data_folder:
             bt.logging.warning(
-                "[CONTROLLER] HFP_CHALLENGE_API_DATA_DIR environment variable not set, skipping result save"
+                "[CONTROLLER] FLR_API_DATA_DIR environment variable not set, skipping result save"
             )
             return
-        os.makedirs(hfp_data_folder, exist_ok=True)
+        os.makedirs(flr_data_folder, exist_ok=True)
         _docker_hub_id = docker_hub_id.split("/")[-1]
         result_file_path = os.path.join(
-            hfp_data_folder, f"{_docker_hub_id}_result.json"
+            flr_data_folder, f"{_docker_hub_id}_result.json"
         )
         with open(result_file_path, "w") as f:
             f.write(json.dumps(result_payload, indent=4))
