@@ -92,10 +92,10 @@ class PayloadManager:
                 fn += 1
 
         return {
-            "true_positive": tp,
-            "true_negative": tn,
-            "false_positive": fp,
-            "false_negative": fn,
+            "true_positive": tp / len(self.payloads) if self.payloads else 0,
+            "true_negative": tn / len(self.payloads) if self.payloads else 0,
+            "false_positive": fp / len(self.payloads) if self.payloads else 0,
+            "false_negative": fn / len(self.payloads) if self.payloads else 0,
         }
 
     def get_payload_with_feedback(self) -> dict:
