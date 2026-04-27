@@ -70,7 +70,7 @@ def run_flowradar_container(
 
     volumes = {}
 
-    target_path = f"/app/submissions/submission.py"
+    target_path = f"/app/submissions.py"
     volumes[file_path] = {"bind": target_path, "mode": "ro"}
     container = client.containers.run(
         config.challenge.fp_container.image,
