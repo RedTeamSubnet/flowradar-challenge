@@ -1,6 +1,6 @@
 services:
   challenge-api:
-    image: redteamsubnet61/flowradar-challenge:1.0.1
+    image: redteamsubnet61/flowradar-challenge:1.0.2
     build:
       context: ./src/flr_challenge/challenge
     # platform: linux/amd64
