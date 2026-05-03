@@ -1,6 +1,6 @@
 import math
 import traceback
-import time
+from datetime import datetime, timezone
 
 import bittensor as bt
 import numpy as np
@@ -85,7 +85,7 @@ class FLRChallengeManager(ChallengeManager):
                 miner_commit.score, miner_commit.penalty
             )
             if not miner_commit.scored_timestamp:
-                miner_commit.scored_timestamp = time.time()
+                miner_commit.scored_timestamp = datetime.now(timezone.utc).timestamp()
             elif not miner_commit.scored_timestamp and miner_commit.commit_timestamp:
                 miner_commit.scored_timestamp = (
                     miner_commit.commit_timestamp + 1 + 24 + 60 + 60
@@ -153,7 +153,7 @@ class FLRChallengeManager(ChallengeManager):
                 continue  # Skip invalid miners
 
             commit_timestamp = best_commit.scored_timestamp
-            evaluation_timestamp = time.time()
+            evaluation_timestamp = datetime.now(timezone.utc).timestamp()
             days_elapsed = (evaluation_timestamp - commit_timestamp) / 86400
 
             # Apply decay and adjustment
