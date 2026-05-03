@@ -2,7 +2,7 @@
 
 This is a RedTeam Subnet's flowradar: vpn detection repository.
 
-Documentation page: <https://docs.theredteam.io/latest/challenges/flowradar_v1>
+Documentation page: <https://docs.theredteam.io/latest/challenges>
 
 ## ✨ Features
 
