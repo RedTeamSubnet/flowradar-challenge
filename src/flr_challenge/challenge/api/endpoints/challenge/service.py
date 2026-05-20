@@ -74,6 +74,9 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                 ground_truth = df["is_vpn"].copy()
                 df = df.drop(columns=["is_vpn"])
             _request_session = requests.Session()
+            logger.info(
+                f"[{request_id}] - Starting fingerprinting process for {len(df)} rows"
+            )
             for index, row in df.iterrows():
                 row_data = row.to_dict()
                 expected_is_vpn = None
@@ -93,7 +96,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                     result = resp.json()
                     is_vpn = result.get("is_vpn")
 
-                    logger.info(
+                    logger.debug(
                         f"[{request_id}] - Row {index}: is_vpn={is_vpn}, expected={expected_is_vpn}"
                     )
 
