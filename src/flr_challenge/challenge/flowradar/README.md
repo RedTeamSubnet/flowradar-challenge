@@ -26,7 +26,7 @@ This project provides an API that processes network flow data to detect if the t
 Training is called as:
 
 ```sh
-python train.py /path/to/training.csv /tmp/model.json
+python train.py /path/to/metrics_100k.csv /tmp/model.json
 ```
 
 The inference script must define:

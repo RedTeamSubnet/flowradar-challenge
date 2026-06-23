@@ -92,8 +92,8 @@ class ChallengeConfig(BaseConfig):
         min_length=2,
         max_length=256,
     )
-    training_dataset_path: str = Field(
-        "{data_dir}/training.csv",
+    training_metrics_csv_path: str = Field(
+        "{data_dir}/metrics_100k.csv",
         strip_whitespace=True,
         min_length=2,
         max_length=256,
@@ -140,23 +140,23 @@ class ChallengeConfig(BaseConfig):
         elif not os.path.isdir(os.path.dirname(self.metrics_csv_path)):
             os.makedirs(os.path.dirname(self.metrics_csv_path), exist_ok=True)
 
-        if "{data_dir}" in self.training_dataset_path:
-            self.training_dataset_path = self.training_dataset_path.format(
+        if "{data_dir}" in self.training_metrics_csv_path:
+            self.training_metrics_csv_path = self.training_metrics_csv_path.format(
                 data_dir=DATA_DIR
             )
 
-        elif not os.path.isdir(os.path.dirname(self.training_dataset_path)):
-            os.makedirs(os.path.dirname(self.training_dataset_path), exist_ok=True)
+        elif not os.path.isdir(os.path.dirname(self.training_metrics_csv_path)):
+            os.makedirs(os.path.dirname(self.training_metrics_csv_path), exist_ok=True)
 
         if not os.access(os.path.dirname(self.metrics_csv_path), os.W_OK):
             raise ValueError(
                 f"Directory for metrics CSV not writable: {os.path.dirname(self.metrics_csv_path)}"
             )
 
-        if not os.access(os.path.dirname(self.training_dataset_path), os.R_OK):
+        if not os.access(os.path.dirname(self.training_metrics_csv_path), os.R_OK):
             raise ValueError(
-                "Directory for training dataset not readable: "
-                f"{os.path.dirname(self.training_dataset_path)}"
+                "Directory for training metrics CSV not readable: "
+                f"{os.path.dirname(self.training_metrics_csv_path)}"
             )
 
         return self

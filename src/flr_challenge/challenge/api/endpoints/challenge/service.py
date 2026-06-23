@@ -211,9 +211,9 @@ def _run_training_script(
     model_path: str,
     tmp_dir: str,
 ) -> None:
-    training_csv_path = config.challenge.training_dataset_path
+    training_csv_path = config.challenge.training_metrics_csv_path
     if not os.path.isfile(training_csv_path):
-        raise FileNotFoundError(f"Training dataset not found: {training_csv_path}")
+        raise FileNotFoundError(f"Training CSV not found: {training_csv_path}")
 
     command = [
         sys.executable,
