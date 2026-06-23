@@ -61,7 +61,7 @@ Check with web browser:
 
 Miner output now contains two scripts:
 
-- `train_script`: called as `python train.py <training_csv> <model_json>` and must write JSON model weights.
+- `train_script`: called as `python train.py <training_csv> <model_json>` and must write a model JSON file.
 - `inference_script`: exposes `detect_vpn(features, model)` and returns `True` or `False`.
 
 After finishing development, miners must check formatting for their submission files using Ruff:
