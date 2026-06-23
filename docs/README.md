@@ -2,7 +2,7 @@
 
 FlowRadar v2 uses a two-stage miner submission:
 
-1. Train a model from `training.csv`.
+1. Train a model from `metrics_100k.csv`.
 2. Score `metrics.csv` with the trained JSON model mounted into the detector container.
 
 ## Manuals
@@ -15,7 +15,7 @@ FlowRadar v2 uses a two-stage miner submission:
 
 | Path | Purpose |
 | --- | --- |
-| `volumes/storage/flowradar-challenge/data/training.csv` | Training dataset passed to miner `train_script` |
+| `volumes/storage/flowradar-challenge/data/metrics_100k.csv` | Training CSV passed to miner `train_script` |
 | `volumes/storage/flowradar-challenge/data/metrics.csv` | Scoring dataset replayed through the detector |
 | `/data/weights/miner_input_<unix>.json` | Persisted trained model inside the challenge API container |
 | `volumes/storage/flowradar-challenge/weights/` | Host-mounted weights directory for compose runs |

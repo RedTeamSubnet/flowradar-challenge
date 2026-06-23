@@ -7,17 +7,17 @@ Use this manual to test a miner submission before scoring it in production.
 Expected local data paths:
 
 ```text
-volumes/storage/flowradar-challenge/data/training.csv
+volumes/storage/flowradar-challenge/data/metrics_100k.csv
 volumes/storage/flowradar-challenge/data/metrics.csv
 ```
 
-`training.csv` is used only for training. `metrics.csv` is used for scoring.
+`metrics_100k.csv` is used only for training. `metrics.csv` is used for scoring.
 
-If your local data directory still has an older or alternate training filename, create `training.csv` once. For example:
+If your local data directory still has an older or alternate training filename, create `metrics_100k.csv` once. For example:
 
 ```sh
 cp volumes/storage/flowradar-challenge/data/<source-training-file>.csv \
-  volumes/storage/flowradar-challenge/data/training.csv
+  volumes/storage/flowradar-challenge/data/metrics_100k.csv
 ```
 
 ## 2. Fast Script Checks
@@ -34,7 +34,7 @@ Run the trainer directly:
 
 ```sh
 python3 src/flr_challenge/challenge/flowradar/src/train.py \
-  volumes/storage/flowradar-challenge/data/training.csv \
+  volumes/storage/flowradar-challenge/data/metrics_100k.csv \
   /tmp/flowradar_model.json
 ```
 
@@ -159,8 +159,8 @@ Training timeout:
 
 Missing training CSV:
 
-- Confirm `FLR_API_DATA_DIR` points to the directory containing `training.csv`.
-- In compose, confirm `volumes/storage/flowradar-challenge/data/training.csv` exists.
+- Confirm `FLR_API_DATA_DIR` points to the directory containing `metrics_100k.csv`.
+- In compose, confirm `volumes/storage/flowradar-challenge/data/metrics_100k.csv` exists.
 
 Invalid model JSON:
 

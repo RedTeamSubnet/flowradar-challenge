@@ -13,16 +13,16 @@ The challenge API writes the submitted training content to `train.py` and calls:
 python train.py <training_csv> <model_json>
 ```
 
-The default training dataset is:
+The default training CSV is:
 
 ```text
-{FLR_API_DATA_DIR}/training.csv
+{FLR_API_DATA_DIR}/metrics_100k.csv
 ```
 
 For local compose runs this maps to:
 
 ```text
-volumes/storage/flowradar-challenge/data/training.csv
+volumes/storage/flowradar-challenge/data/metrics_100k.csv
 ```
 
 The training script must:
