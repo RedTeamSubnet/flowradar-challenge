@@ -31,23 +31,30 @@ def main() -> int:
         print("FLR_CHALLENGE_API_KEY is not set", file=sys.stderr)
         return 1
 
-    submission_file = (
-        root_dir / "src/flr_challenge/challenge/flowradar/src/submissions.py"
-    )
+    flowradar_src = root_dir / "src/flr_challenge/challenge/flowradar/src"
+    training_file = flowradar_src / "train.py"
+    submission_file = flowradar_src / "submissions.py"
 
+    if not training_file.exists():
+        print(f"Missing training file: {training_file}", file=sys.stderr)
+        return 1
     if not submission_file.exists():
         print(f"Missing submission file: {submission_file}", file=sys.stderr)
         return 1
 
     try:
-        commit_files = submission_file.read_text(encoding="utf-8")
+        train_script = training_file.read_text(encoding="utf-8")
+        inference_script = submission_file.read_text(encoding="utf-8")
     except OSError as exc:
-        print(f"Failed to read submission file: {exc}", file=sys.stderr)
+        print(f"Failed to read submission files: {exc}", file=sys.stderr)
         return 1
 
     payload = {
         "miner_input": {"random_val": secrets.token_hex(8)},
-        "miner_output": {"commit_files": commit_files},
+        "miner_output": {
+            "train_script": train_script,
+            "inference_script": inference_script,
+        },
     }
 
     req = request.Request(

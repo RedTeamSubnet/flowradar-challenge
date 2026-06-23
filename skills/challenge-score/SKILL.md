@@ -17,7 +17,7 @@ python3 skills/challenge-score/scripts/check_score.py
 
 What it does:
 1. Loads `FLR_CHALLENGE_API_KEY` from root `.env` (if present).
-2. Reads submission file from `src/flr_challenge/challenge/flowradar/src/submissions.py`.
+2. Reads training and inference files from `src/flr_challenge/challenge/flowradar/src/train.py` and `submissions.py`.
 3. Sends `POST http://localhost:10001/score` with `X-API-Key` header.
 4. Prints score output (F1 score expected from `0` to `1`).
 
@@ -38,15 +38,16 @@ The script builds payload using the challenge submission format:
     "random_val": "<random string>"
   },
   "miner_output": {
-    "commit_files": "<contents of submissions.py>"
+    "train_script": "<contents of train.py>",
+    "inference_script": "<contents of submissions.py>"
   }
 }
 ```
 
 `MinerOutput` constraints (from schema):
-- `commit_files` is required.
-- content should be valid Python.
-- content must respect configured submission line limit.
+- `train_script` is required and called as `python train.py <training_csv> <model_json>`.
+- `inference_script` is required and must expose `detect_vpn(features, model)` or legacy `detect_vpn(features)`.
+- each script must respect the configured submission line limit.
 
 Expected `/score` behavior:
 - endpoint scores provided `miner_output` by replaying dataset rows.
@@ -55,19 +56,20 @@ Expected `/score` behavior:
 # Do / Don't
 
 Do:
-- keep solver logic in `src/flr_challenge/challenge/flowradar/src/submissions.py`.
+- keep training logic in `src/flr_challenge/challenge/flowradar/src/train.py`.
+- keep inference logic in `src/flr_challenge/challenge/flowradar/src/submissions.py`.
 - score after every meaningful submission change.
 - inspect telemetry/results when score changes unexpectedly.
 
 Don't:
-- send empty or partial `commit_files` content.
+- send empty or partial script content.
 - move submission logic outside `submissions.py` without updating challenge config.
 - assume stale score state; rerun scoring after edits.
 
 # Helper Scripts
 
 - `python3 skills/challenge-score/scripts/check_score.py`
-  - reads `submissions.py`
+  - reads `train.py` and `submissions.py`
   - calls `/score`
   - prints score or raw error response
 
