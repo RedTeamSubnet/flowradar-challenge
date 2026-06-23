@@ -4,19 +4,20 @@ Fingerprint-based VPN detection API using network flow features.
 
 ## Overview
 
-This project provides an API that processes network flow data to detect if the traffic is coming from a VPN. In v2, miners submit one training script and one inference script. The challenge runs training on the configured 100k CSV, persists the produced JSON under `/data/weights/miner_input_<unix>.json`, then mounts that JSON into the detector container for scoring.
+This project provides the detector container used by the FlowRadar v2 scoring API. Miners submit one training script and one inference script. The challenge runs training on `metrics_100k.csv` and mounts the produced per-run JSON into this detector container as `/app/model.json`.
 
 ## Architecture
 
 - **Training Logic**: `train.py` receives the training CSV and writes model JSON
-- **Detection Logic**: `submissions.py` reads model data passed by the API wrapper
+- **Detection Logic**: `submissions.py` exposes `detect_vpn(features, model)`
+- **Model Loading**: `app.py` loads `FLOWRADAR_MODEL_PATH`, default `/app/model.json`
 - **API**: FastAPI for serving VPN detection requests
 
 ## Key Components
 
 | File             | Description                       |
 | ---------------- | --------------------------------- |
-| `train.py`       | Training script that writes JSON model weights |
+| `train.py`       | Training script that writes a model JSON |
 | `submissions.py` | VPN detection logic exposing `detect_vpn(features, model)` |
 | `app.py`         | FastAPI application and endpoints |
 | `data_types.py`  | Pydantic models for input/output  |
@@ -36,7 +37,7 @@ def detect_vpn(features: dict, model: dict) -> bool:
     ...
 ```
 
-The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `600` seconds. Model files are persisted under `FLR_CHALLENGE_MODEL_WEIGHTS_DIR`, defaulting to `/data/weights`.
+The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `600` seconds. The generated model JSON is mounted into this container at `/app/model.json` for the current scoring run.
 
 ## API Endpoints
 
@@ -44,9 +45,9 @@ The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `
 
 Health check endpoint.
 
-### POST /fingerprint
+### POST /vpn_detector
 
-Detect if traffic is VPN based on network flow features.
+Detect if traffic is VPN based on network flow features and the mounted model JSON.
 
 **Request:**
 

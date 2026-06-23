@@ -1,13 +1,16 @@
 services:
-  miner-api:
-    image: myhub/rest-hfp-commit:latest
+  flowradar-detector:
+    image: myhub/flowradar-detector:latest
     build:
       context: .
     restart: unless-stopped
     environment:
       TERM: ${TERM:-xterm}
       TZ: ${TZ:-UTC}
-      PORT: 8000
+      PORT: ${PORT:-8000}
+      FLOWRADAR_MODEL_PATH: ${FLOWRADAR_MODEL_PATH:-/app/model.json}
+    volumes:
+      - "${FLOWRADAR_MODEL_PATH_HOST:-./model.json}:${FLOWRADAR_MODEL_PATH:-/app/model.json}:ro"
     ports:
-      - 8000:8000
+      - "${PORT:-8000}:${PORT:-8000}"
     tty: true
