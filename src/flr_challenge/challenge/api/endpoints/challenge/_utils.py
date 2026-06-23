@@ -60,7 +60,10 @@ def _ensure_image(client: docker.DockerClient) -> None:
 
 
 def run_flowradar_container(
-    request_id: str, file_path: str, flowradar_port: int = 8000
+    request_id: str,
+    file_path: str,
+    model_path: str | None = None,
+    flowradar_port: int = 8000,
 ) -> tuple[docker.models.containers.Container, str]:
     client = docker.from_env()
     ensure_network_exists()
@@ -72,11 +75,19 @@ def run_flowradar_container(
 
     target_path = f"/app/submissions.py"
     volumes[file_path] = {"bind": target_path, "mode": "ro"}
+    environment = {
+        "PORT": str(flowradar_port),
+    }
+    if model_path is not None:
+        target_model_path = "/app/model.json"
+        volumes[model_path] = {"bind": target_model_path, "mode": "ro"}
+        environment["FLOWRADAR_MODEL_PATH"] = target_model_path
+
     container = client.containers.run(
         config.challenge.fp_container.image,
         detach=True,
         network=config.challenge.fp_container.network_name,
-        environment={"PORT": str(flowradar_port)},
+        environment=environment,
         volumes=volumes,
         name=container_name,
     )

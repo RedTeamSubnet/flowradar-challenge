@@ -17,6 +17,7 @@ services:
       - "./volumes/configs/flowradar-challenge:${FLR_API_CONFIGS_DIR:-/etc/flowradar-challenge}"
       - "./volumes/storage/flowradar-challenge/logs:${FLR_API_LOGS_DIR:-/var/log/flowradar-challenge}"
       - "./volumes/storage/flowradar-challenge/data:${FLR_API_DATA_DIR:-/var/lib/flowradar-challenge}"
+      - "./volumes/storage/flowradar-challenge/weights:${FLR_CHALLENGE_MODEL_WEIGHTS_DIR:-/data/weights}"
     ports:
       - "${FLR_API_PORT:-10001}:${FLR_API_PORT:-10001}"
     tty: true

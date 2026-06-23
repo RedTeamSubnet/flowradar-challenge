@@ -1,5 +1,7 @@
 import sys
+import json
 import logging
+import os
 from uuid import uuid4
 
 from fastapi import FastAPI, Body, HTTPException, Request
@@ -17,6 +19,22 @@ logging.basicConfig(
 
 
 app = FastAPI()
+_MODEL = None
+
+
+def _load_model() -> object:
+    model_path = os.getenv("FLOWRADAR_MODEL_PATH", "/app/model.json")
+    if not os.path.exists(model_path):
+        logger.warning("Model JSON not found at %s; using empty model", model_path)
+        return {}
+    with open(model_path, encoding="utf-8") as model_file:
+        return json.load(model_file)
+
+
+@app.on_event("startup")
+def startup() -> None:
+    global _MODEL
+    _MODEL = _load_model()
 
 
 @app.get("/health")
@@ -36,7 +54,10 @@ def fingerprint(
     elif "X-Correlation-ID" in request.headers:
         _request_id: str = request.headers.get("X-Correlation-ID", _request_id)
     try:
-        is_vpn = detect_vpn(vpn_input.products)
+        try:
+            is_vpn = detect_vpn(vpn_input.products, _MODEL)
+        except TypeError:
+            is_vpn = detect_vpn(vpn_input.products)
 
         return VPNDetectionOutput(
             is_vpn=is_vpn,

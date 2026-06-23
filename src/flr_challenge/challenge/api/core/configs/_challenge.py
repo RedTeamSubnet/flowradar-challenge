@@ -92,6 +92,30 @@ class ChallengeConfig(BaseConfig):
         min_length=2,
         max_length=256,
     )
+    training_dataset_path: str = Field(
+        "{data_dir}/training.csv",
+        strip_whitespace=True,
+        min_length=2,
+        max_length=256,
+        description="CSV passed to the miner training script.",
+    )
+    training_timeout_seconds: float = Field(
+        default=600,
+        gt=0,
+        description="Maximum seconds allowed for miner training.",
+    )
+    model_json_size_limit: int = Field(
+        default=20 * 1024 * 1024,
+        ge=1,
+        description="Maximum generated model JSON size in bytes.",
+    )
+    model_weights_dir: str = Field(
+        "/data/weights",
+        strip_whitespace=True,
+        min_length=2,
+        max_length=256,
+        description="Directory where trained miner model JSON files are persisted.",
+    )
     submission_fns: list[str] = Field(
         default=["initializer", "metrics_collector", "linker"], min_items=1
     )
@@ -116,9 +140,23 @@ class ChallengeConfig(BaseConfig):
         elif not os.path.isdir(os.path.dirname(self.metrics_csv_path)):
             os.makedirs(os.path.dirname(self.metrics_csv_path), exist_ok=True)
 
+        if "{data_dir}" in self.training_dataset_path:
+            self.training_dataset_path = self.training_dataset_path.format(
+                data_dir=DATA_DIR
+            )
+
+        elif not os.path.isdir(os.path.dirname(self.training_dataset_path)):
+            os.makedirs(os.path.dirname(self.training_dataset_path), exist_ok=True)
+
         if not os.access(os.path.dirname(self.metrics_csv_path), os.W_OK):
             raise ValueError(
                 f"Directory for metrics CSV not writable: {os.path.dirname(self.metrics_csv_path)}"
+            )
+
+        if not os.access(os.path.dirname(self.training_dataset_path), os.R_OK):
+            raise ValueError(
+                "Directory for training dataset not readable: "
+                f"{os.path.dirname(self.training_dataset_path)}"
             )
 
         return self

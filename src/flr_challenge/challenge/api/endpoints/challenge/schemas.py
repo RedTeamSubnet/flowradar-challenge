@@ -11,14 +11,19 @@ from api.logger import logger
 
 api_dir = os.environ.get("FLR_API_DIR", "/app/flowradar-challenge")
 _submission_path = Path(os.path.join(api_dir, "flowradar", "src", "submissions.py"))
+_training_path = Path(os.path.join(api_dir, "flowradar", "src", "train.py"))
 _submission_py = ""
+_training_py = ""
 try:
     if _submission_path.exists():
         with open(_submission_path) as _submission_file:
             _submission_py = _submission_file.read()
+    if _training_path.exists():
+        with open(_training_path) as _training_file:
+            _training_py = _training_file.read()
 
 except Exception:
-    logger.exception("Failed to read submission file!")
+    logger.exception("Failed to read example submission files!")
 
 
 class MinerInput(BaseModel):
@@ -31,33 +36,49 @@ class MinerInput(BaseModel):
 
 
 class MinerOutput(BaseModel):
-    commit_files: str = Field(
+    train_script: str = Field(
         ...,
-        title="Submission Python File",
-        description="The content of the submission Python file as a string.",
+        title="Training Python File",
+        description=(
+            "Python script content. It is called as "
+            "`python train.py <training_csv> <model_json>` and must write model JSON."
+        ),
+        examples=[
+            (
+                _training_py
+                if _training_py
+                else "import json, sys\njson.dump({}, open(sys.argv[2], 'w'))\n"
+            )
+        ],
+    )
+    inference_script: str = Field(
+        ...,
+        title="Inference Python File",
+        description=(
+            "Python script content exposing `detect_vpn(features, model)` "
+            "or legacy `detect_vpn(features)`."
+        ),
         examples=[
             (
                 _submission_py
                 if _submission_py
-                else "def solution():\n    return 'Hello, FlowRadar Challenge!'"
+                else "def detect_vpn(features, model):\n    return False\n"
             )
         ],
     )
 
-    @field_validator("commit_files", mode="after")
+    @field_validator("train_script", "inference_script", mode="after")
     @classmethod
     def _check_submission_py(cls, val: str) -> str:
         """
-        Validate the submission Python file based on the challenge configuration.
-            - The file should not exceed the line limit.
+        Validate submitted scripts based on the challenge configuration.
             - Each file should not exceed the line limit.
-            - Each file should have a valid name and extension.
         """
         if config.challenge.submission_length_limit is not None:
             line_count = len(val.splitlines())
             if line_count > config.challenge.submission_length_limit:
                 raise ValueError(
-                    f"Submission file exceeds the line limit of {config.challenge.submission_length_limit}. "
+                    f"Submission script exceeds the line limit of {config.challenge.submission_length_limit}. "
                     f"Current line count: {line_count}."
                 )
 
@@ -105,7 +126,6 @@ class ScoringTelemetryResponse(BaseModel):
 
 __all__ = [
     "MinerInput",
-    "CommitFilePM",
     "MinerOutput",
     "ScoringTelemetryResponse",
 ]

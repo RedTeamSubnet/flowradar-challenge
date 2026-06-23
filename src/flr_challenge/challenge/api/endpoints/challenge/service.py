@@ -1,4 +1,7 @@
+import json
 import os
+import subprocess
+import sys
 import tempfile
 import time
 
@@ -24,7 +27,7 @@ def get_task() -> MinerInput:
 
 
 @validate_call
-def score(request_id: str, miner_output: MinerOutput) -> None:
+def score(request_id: str, miner_output: MinerOutput) -> float:
     if scoring_status_manager.get_scoring_status() == ScoringStatus.SCORING:
         raise RuntimeError("Scoring is already in progress")
     runtime_seconds = 0.0
@@ -39,19 +42,52 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 
-        file_path = os.path.join(tmp_dir, "submission.py")
-        with open(file_path, "w") as f:
-            f.write(miner_output.commit_files)
-        total_file_size += os.path.getsize(file_path)
+        training_path = os.path.join(tmp_dir, "train.py")
+        submission_path = os.path.join(tmp_dir, "submissions.py")
+        with open(training_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(miner_output.train_script)
+        with open(submission_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(miner_output.inference_script)
+        total_file_size += os.path.getsize(training_path)
+        total_file_size += os.path.getsize(submission_path)
 
         logger.info(
             f"[{request_id}] - Total submission file size: {total_file_size} bytes"
         )
 
         try:
+            total_runtime_start = time.perf_counter()
+            training_start = time.perf_counter()
+            logger.info(
+                f"[{request_id}] - Starting model training with timeout "
+                f"{config.challenge.training_timeout_seconds}s"
+            )
+            model_path = _build_model_output_path()
+            training_output_path = f"{model_path}.tmp"
+            try:
+                _run_training_script(
+                    request_id=request_id,
+                    training_path=training_path,
+                    model_path=training_output_path,
+                    tmp_dir=tmp_dir,
+                )
+                os.replace(training_output_path, model_path)
+            except Exception:
+                if os.path.exists(training_output_path):
+                    os.remove(training_output_path)
+                raise
+            training_seconds = time.perf_counter() - training_start
+            total_file_size += os.path.getsize(model_path)
+            logger.info(
+                f"[{request_id}] - Training completed in {training_seconds:.3f}s; "
+                f"model saved to {model_path}; "
+                f"model size={os.path.getsize(model_path)} bytes"
+            )
+
             container, ip_address = _utils.run_flowradar_container(
                 request_id=request_id,
-                file_path=file_path,
+                file_path=submission_path,
+                model_path=model_path,
                 flowradar_port=config.challenge.flowradar_port,
             )
             _utils.start_log_streaming_thread(container)
@@ -123,10 +159,12 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                     )
                     break
             _request_session.close()
-            runtime_seconds = time.perf_counter() - runtime_start
+            fingerprint_seconds = time.perf_counter() - runtime_start
+            runtime_seconds = time.perf_counter() - total_runtime_start
 
             logger.info(
-                f"[{request_id}] - Fingerprinting completed. Stored {payload_manager.payload_count()} fingerprints."
+                f"[{request_id}] - Fingerprinting completed in {fingerprint_seconds:.3f}s. "
+                f"Stored {payload_manager.payload_count()} fingerprints."
             )
 
             final_score = payload_manager.calculate_score()
@@ -153,6 +191,68 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 
     return final_score
+
+
+def _build_model_output_path() -> str:
+    weights_dir = config.challenge.model_weights_dir
+    os.makedirs(weights_dir, exist_ok=True)
+
+    timestamp = int(time.time())
+    model_path = os.path.join(weights_dir, f"miner_input_{timestamp}.json")
+    while os.path.exists(model_path):
+        timestamp += 1
+        model_path = os.path.join(weights_dir, f"miner_input_{timestamp}.json")
+    return model_path
+
+
+def _run_training_script(
+    request_id: str,
+    training_path: str,
+    model_path: str,
+    tmp_dir: str,
+) -> None:
+    training_csv_path = config.challenge.training_dataset_path
+    if not os.path.isfile(training_csv_path):
+        raise FileNotFoundError(f"Training dataset not found: {training_csv_path}")
+
+    command = [
+        sys.executable,
+        training_path,
+        training_csv_path,
+        model_path,
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=tmp_dir,
+            capture_output=True,
+            text=True,
+            timeout=config.challenge.training_timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        logger.error(
+            f"[{request_id}] - Training timed out after "
+            f"{config.challenge.training_timeout_seconds}s"
+        )
+        raise TimeoutError("Training timed out") from exc
+
+    if result.stdout:
+        logger.info(f"[{request_id}] - Training stdout:\n{result.stdout[-4000:]}")
+    if result.stderr:
+        logger.warning(f"[{request_id}] - Training stderr:\n{result.stderr[-4000:]}")
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Training script failed with exit code {result.returncode}")
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError("Training script did not create model JSON")
+    model_size = os.path.getsize(model_path)
+    if model_size > config.challenge.model_json_size_limit:
+        raise ValueError(
+            f"Model JSON exceeds size limit of {config.challenge.model_json_size_limit} bytes"
+        )
+    with open(model_path, encoding="utf-8") as model_file:
+        json.load(model_file)
 
 
 __all__ = [
