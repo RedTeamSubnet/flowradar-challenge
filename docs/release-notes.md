@@ -6,6 +6,14 @@ hide:
 
 # 📌 Release Notes
 
+## Unreleased
+
+- FlowRadar v2 submission contract:
+  - miners submit `train_script` and `inference_script`
+  - training receives `training.csv` through `FLR_CHALLENGE_TRAINING_DATASET_PATH`
+  - trained JSON weights are persisted under `/data/weights/miner_input_<unix>.json`
+  - scoring continues to replay `metrics.csv` through the detector container
+
 ## v1.1.1 (2026-05-20)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->

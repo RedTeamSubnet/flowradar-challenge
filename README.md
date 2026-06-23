@@ -1,6 +1,6 @@
 # FlowRadar: VPN Detection
 
-This is a RedTeam Subnet's flowradar: vpn detection repository.
+This is a RedTeam Subnet FlowRadar VPN detection challenge repository.
 
 Documentation page: <https://docs.theredteam.io/latest/challenges>
 
@@ -10,8 +10,32 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
 - Challenge module (Python package)
 - Challenge controller and manager
 - Challenge API (FastAPI)
+- FlowRadar v2 two-stage submission flow:
+    - miner training script receives `training.csv` and writes JSON model weights
+    - miner inference script receives each `metrics.csv` row plus the trained model
 
 ---
+
+## FlowRadar v2 Challenge Flow
+
+Miners submit two Python scripts:
+
+1. `train_script`
+    - Called as `python train.py <training_csv> <model_json>`.
+    - Receives the configured training dataset, normally `training.csv`.
+    - Must write a valid JSON model file.
+2. `inference_script`
+    - Exposes `detect_vpn(features, model) -> bool`.
+    - Runs inside the FlowRadar detector container.
+    - Receives one row from `metrics.csv` at a time and the JSON model produced by training.
+
+The challenge API first trains the miner model, saves the output to:
+
+```text
+/data/weights/miner_input_<unix_timestamp>.json
+```
+
+Then it mounts that model JSON into the FlowRadar container and runs the existing scoring replay against `metrics.csv`.
 
 ## 🐤 Getting Started
 
@@ -154,6 +178,10 @@ FLR_API_PORT=10001
 # FLR_API_CONFIGS_DIR="/etc/flowradar-challenge"
 # FLR_API_LOGS_DIR="/var/log/flowradar-challenge"
 # FLR_API_DATA_DIR="/var/lib/flowradar-challenge"
+# FLR_CHALLENGE_TRAINING_DATASET_PATH="{data_dir}/training.csv"
+# FLR_CHALLENGE_METRICS_CSV_PATH="{data_dir}/metrics.csv"
+# FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS=600
+# FLR_CHALLENGE_MODEL_WEIGHTS_DIR="/data/weights"
 # FLR_API_TMP_DIR="/tmp/flowradar-challenge"
 # FLR_API_VERSION="1"
 # FLR_API_PREFIX=""
@@ -181,6 +209,9 @@ docker compose build
 ## 📚 Documentation
 
 - <https://docs.theredteam.io/latest/challenges>
+- [Docs index](./docs/README.md)
+- [Testing manual](./docs/testing-manual.md)
+- [Miner v2 submission guide](./docs/miner-v2-submission.md)
 
 ---
 

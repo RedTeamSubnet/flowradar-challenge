@@ -4,20 +4,39 @@ Fingerprint-based VPN detection API using network flow features.
 
 ## Overview
 
-This project provides an API that processes network flow data to detect if the traffic is coming from a VPN. It analyzes packet length ratios, packet rates, and other network features.
+This project provides an API that processes network flow data to detect if the traffic is coming from a VPN. In v2, miners submit one training script and one inference script. The challenge runs training on the configured 100k CSV, persists the produced JSON under `/data/weights/miner_input_<unix>.json`, then mounts that JSON into the detector container for scoring.
 
 ## Architecture
 
-- **Detection Logic**: Heuristic-based VPN detection
+- **Training Logic**: `train.py` receives the training CSV and writes model JSON
+- **Detection Logic**: `submissions.py` reads model data passed by the API wrapper
 - **API**: FastAPI for serving VPN detection requests
 
 ## Key Components
 
 | File             | Description                       |
 | ---------------- | --------------------------------- |
-| `submissions.py` | VPN detection logic (heuristics)  |
+| `train.py`       | Training script that writes JSON model weights |
+| `submissions.py` | VPN detection logic exposing `detect_vpn(features, model)` |
 | `app.py`         | FastAPI application and endpoints |
 | `data_types.py`  | Pydantic models for input/output  |
+
+## Miner Contract
+
+Training is called as:
+
+```sh
+python train.py /path/to/training.csv /tmp/model.json
+```
+
+The inference script must define:
+
+```python
+def detect_vpn(features: dict, model: dict) -> bool:
+    ...
+```
+
+The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `600` seconds. Model files are persisted under `FLR_CHALLENGE_MODEL_WEIGHTS_DIR`, defaulting to `/data/weights`.
 
 ## API Endpoints
 
