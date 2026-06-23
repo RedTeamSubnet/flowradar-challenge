@@ -10,6 +10,11 @@ services:
       TERM: ${TERM:-xterm}
       TZ: ${TZ:-UTC}
       FLR_API_PORT: ${FLR_API_PORT:-10001}
+      FLR_API_DATA_DIR: ${FLR_API_DATA_DIR:-/var/lib/flowradar-challenge}
+      FLR_CHALLENGE_METRICS_CSV_PATH: ${FLR_CHALLENGE_METRICS_CSV_PATH:-{data_dir}/metrics.csv}
+      FLR_CHALLENGE_TRAINING_METRICS_CSV_PATH: ${FLR_CHALLENGE_TRAINING_METRICS_CSV_PATH:-{data_dir}/metrics_100k.csv}
+      FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS: ${FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS:-600}
+      FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT: ${FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT:-20971520}
     env_file:
       - path: .env
         required: false
@@ -17,7 +22,6 @@ services:
       - "./volumes/configs/flowradar-challenge:${FLR_API_CONFIGS_DIR:-/etc/flowradar-challenge}"
       - "./volumes/storage/flowradar-challenge/logs:${FLR_API_LOGS_DIR:-/var/log/flowradar-challenge}"
       - "./volumes/storage/flowradar-challenge/data:${FLR_API_DATA_DIR:-/var/lib/flowradar-challenge}"
-      - "./volumes/storage/flowradar-challenge/weights:${FLR_CHALLENGE_MODEL_WEIGHTS_DIR:-/data/weights}"
     ports:
       - "${FLR_API_PORT:-10001}:${FLR_API_PORT:-10001}"
     tty: true

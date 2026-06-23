@@ -11,7 +11,7 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
 - Challenge controller and manager
 - Challenge API (FastAPI)
 - FlowRadar v2 two-stage submission flow:
-    - miner training script receives `metrics_100k.csv` and writes JSON model weights
+    - miner training script receives `metrics_100k.csv` and writes a per-run model JSON
     - miner inference script receives each `metrics.csv` row plus the trained model
 
 ---
@@ -29,13 +29,7 @@ Miners submit two Python scripts:
     - Runs inside the FlowRadar detector container.
     - Receives one row from `metrics.csv` at a time and the JSON model produced by training.
 
-The challenge API first trains the miner model, saves the output to:
-
-```text
-/data/weights/miner_input_<unix_timestamp>.json
-```
-
-Then it mounts that model JSON into the FlowRadar container and runs the existing scoring replay against `metrics.csv`.
+The challenge API first trains the miner model into a temporary `model.json` for the current scoring run. It then mounts that model JSON into the FlowRadar container and runs the existing scoring replay against `metrics.csv`.
 
 ## 🐤 Getting Started
 
@@ -181,7 +175,6 @@ FLR_API_PORT=10001
 # FLR_CHALLENGE_TRAINING_METRICS_CSV_PATH="{data_dir}/metrics_100k.csv"
 # FLR_CHALLENGE_METRICS_CSV_PATH="{data_dir}/metrics.csv"
 # FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS=600
-# FLR_CHALLENGE_MODEL_WEIGHTS_DIR="/data/weights"
 # FLR_API_TMP_DIR="/tmp/flowradar-challenge"
 # FLR_API_VERSION="1"
 # FLR_API_PREFIX=""
