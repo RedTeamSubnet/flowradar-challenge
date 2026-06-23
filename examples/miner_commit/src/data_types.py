@@ -13,19 +13,24 @@ class MinerInput(BaseModel):
 
 
 class MinerOutput(BaseModel):
-    commit_files: str = Field(
+    train_script: str = Field(
         ...,
-        title="Commit Files",
-        description="List of Commit files for the challenge.",
+        title="Training Script",
+        description="Script called as `python train.py <training_csv> <model_json>`.",
+    )
+    inference_script: str = Field(
+        ...,
+        title="Inference Script",
+        description="Script exposing `detect_vpn(features, model)`.",
     )
 
-    @field_validator("commit_files", mode="after")
+    @field_validator("train_script", "inference_script", mode="after")
     @classmethod
-    def _check_commit_files(cls, val: str) -> str:
+    def _check_scripts(cls, val: str) -> str:
         _content_lines = val.splitlines()
         if len(_content_lines) > 1000:
             raise ValueError(
-                f"Commit files contain too many lines, should be <= 1000 lines!"
+                "Commit script contains too many lines, should be <= 1000 lines!"
             )
 
         return val

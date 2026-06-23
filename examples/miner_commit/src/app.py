@@ -29,12 +29,16 @@ def solve(miner_input: MinerInput = Body(...)) -> MinerOutput:
     _miner_output: MinerOutput
     try:
         _src_dir = pathlib.Path(__file__).parent.resolve()
-        _commit_dir = _src_dir / "commit" / "submissions.py"
-        _commit_file_pm = ""
-        with open(_commit_dir) as _commit_file:
-            _commit_file_pm = _commit_file.read()
+        _commit_dir = _src_dir / "commit"
+        with open(_commit_dir / "train.py") as _training_file:
+            _training_script = _training_file.read()
+        with open(_commit_dir / "submissions.py") as _submission_file:
+            _inference_script = _submission_file.read()
 
-        _miner_output = MinerOutput(commit_files=_commit_file_pm)
+        _miner_output = MinerOutput(
+            train_script=_training_script,
+            inference_script=_inference_script,
+        )
         logger.info("Successfully retrieved commit files.")
     except Exception as err:
         logger.error(f"Failed to retrieve commit files: {str(err)}")

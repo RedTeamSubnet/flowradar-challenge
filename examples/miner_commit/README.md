@@ -59,10 +59,16 @@ Check with web browser:
 
 ### 5. 🧹 Format check before submission
 
-After finishing development, miners must check formatting for their submission file using Ruff:
+Miner output now contains two scripts:
+
+- `train_script`: called as `python train.py <training_csv> <model_json>` and must write JSON model weights.
+- `inference_script`: exposes `detect_vpn(features, model)` and returns `True` or `False`.
+
+After finishing development, miners must check formatting for their submission files using Ruff:
 
 ```sh
 ruff --config volumes/configs/.ruff.toml --check src/flr_challenge/challenge/flowradar/src/submissions.py
+ruff --config volumes/configs/.ruff.toml --check src/flr_challenge/challenge/flowradar/src/train.py
 ```
 
 > [!CAUTION]
