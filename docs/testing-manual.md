@@ -110,27 +110,7 @@ python3 skills/challenge-score/scripts/check_score.py
 
 Expected result: a numeric F1 score from `0` to `1`.
 
-## 5. Inspect Generated Weights
-
-After a score run, check the host-mounted weights directory:
-
-```sh
-ls -lh volumes/storage/flowradar-challenge/weights
-```
-
-Expected file shape:
-
-```text
-miner_input_<unix_timestamp>.json
-```
-
-Validate the newest model:
-
-```sh
-python3 -m json.tool "$(ls -t volumes/storage/flowradar-challenge/weights/miner_input_*.json | head -n 1)" >/dev/null
-```
-
-## 6. Inspect Telemetry and Results
+## 5. Inspect Telemetry and Results
 
 Telemetry:
 
@@ -150,7 +130,7 @@ Status:
 curl -s http://localhost:10001/status | jq
 ```
 
-## 7. Common Failures
+## 6. Common Failures
 
 Training timeout:
 
@@ -171,8 +151,3 @@ Detector returns HTTP 500:
 
 - Confirm `detect_vpn(features, model)` is defined.
 - Ensure inference code handles missing fields and string numeric values.
-
-No generated weights on host:
-
-- Confirm compose includes the weights mount:
-  `./volumes/storage/flowradar-challenge/weights:/data/weights`.

@@ -32,17 +32,7 @@ The training script must:
 - keep the JSON below `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`, default `20 MiB`
 - avoid depending on files outside the submitted script and provided CSV
 
-The challenge persists the validated JSON as:
-
-```text
-/data/weights/miner_input_<unix_timestamp>.json
-```
-
-In compose, this directory is host-mounted at:
-
-```text
-volumes/storage/flowradar-challenge/weights/
-```
+The challenge writes the validated model JSON to a temporary scoring directory and mounts it into the detector container for that same run.
 
 ## Inference Script
 

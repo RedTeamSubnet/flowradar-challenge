@@ -11,7 +11,7 @@ hide:
 - FlowRadar v2 submission contract:
   - miners submit `train_script` and `inference_script`
   - training receives `metrics_100k.csv` through `FLR_CHALLENGE_TRAINING_METRICS_CSV_PATH`
-  - trained JSON weights are persisted under `/data/weights/miner_input_<unix>.json`
+  - trained model JSON is mounted into the detector container for the current scoring run
   - scoring continues to replay `metrics.csv` through the detector container
 
 ## v1.1.1 (2026-05-20)
