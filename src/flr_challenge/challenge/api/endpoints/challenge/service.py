@@ -44,6 +44,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
 
         training_path = os.path.join(tmp_dir, "train.py")
         submission_path = os.path.join(tmp_dir, "submissions.py")
+        model_path = os.path.join(tmp_dir, "model.json")
         with open(training_path, "w", encoding="utf-8", newline="\n") as f:
             f.write(miner_output.train_script)
         with open(submission_path, "w", encoding="utf-8", newline="\n") as f:
@@ -62,25 +63,16 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
                 f"[{request_id}] - Starting model training with timeout "
                 f"{config.challenge.training_timeout_seconds}s"
             )
-            model_path = _build_model_output_path()
-            training_output_path = f"{model_path}.tmp"
-            try:
-                _run_training_script(
-                    request_id=request_id,
-                    training_path=training_path,
-                    model_path=training_output_path,
-                    tmp_dir=tmp_dir,
-                )
-                os.replace(training_output_path, model_path)
-            except Exception:
-                if os.path.exists(training_output_path):
-                    os.remove(training_output_path)
-                raise
+            _run_training_script(
+                request_id=request_id,
+                training_path=training_path,
+                model_path=model_path,
+                tmp_dir=tmp_dir,
+            )
             training_seconds = time.perf_counter() - training_start
             total_file_size += os.path.getsize(model_path)
             logger.info(
                 f"[{request_id}] - Training completed in {training_seconds:.3f}s; "
-                f"model saved to {model_path}; "
                 f"model size={os.path.getsize(model_path)} bytes"
             )
 
@@ -191,18 +183,6 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 
     return final_score
-
-
-def _build_model_output_path() -> str:
-    weights_dir = config.challenge.model_weights_dir
-    os.makedirs(weights_dir, exist_ok=True)
-
-    timestamp = int(time.time())
-    model_path = os.path.join(weights_dir, f"miner_input_{timestamp}.json")
-    while os.path.exists(model_path):
-        timestamp += 1
-        model_path = os.path.join(weights_dir, f"miner_input_{timestamp}.json")
-    return model_path
 
 
 def _run_training_script(

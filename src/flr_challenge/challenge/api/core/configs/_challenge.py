@@ -109,13 +109,6 @@ class ChallengeConfig(BaseConfig):
         ge=1,
         description="Maximum generated model JSON size in bytes.",
     )
-    model_weights_dir: str = Field(
-        "/data/weights",
-        strip_whitespace=True,
-        min_length=2,
-        max_length=256,
-        description="Directory where trained miner model JSON files are persisted.",
-    )
     submission_fns: list[str] = Field(
         default=["initializer", "metrics_collector", "linker"], min_items=1
     )
