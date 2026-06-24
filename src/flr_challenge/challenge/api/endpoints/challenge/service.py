@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from typing import Any
 
 import pandas as pd
 import requests
@@ -21,6 +22,18 @@ from .payload_managers import (
 
 def get_task() -> MinerInput:
     return MinerInput()
+
+
+def _json_safe_value(value: Any) -> Any:
+    """Convert pandas/numpy missing scalars to valid JSON values."""
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+
+    item = getattr(value, "item", None)
+    return item() if callable(item) else value
 
 
 @validate_call
@@ -100,22 +113,30 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             df = pd.read_csv(config.challenge.metrics_csv_path)
             runtime_start = time.perf_counter()
 
-            # Save ground truth before dropping the column
-            ground_truth = None
-            if "is_vpn" in df.columns:
-                ground_truth = df["is_vpn"].copy()
-                df = df.drop(columns=["is_vpn"])
+            label_column = next(
+                (
+                    column
+                    for column in ("vpn_is_enabled", "is_vpn")
+                    if column in df.columns
+                ),
+                None,
+            )
+            if label_column is None:
+                raise ValueError(
+                    "Scoring CSV must contain 'vpn_is_enabled' or 'is_vpn'"
+                )
+            ground_truth = df.pop(label_column)
+
             _request_session = requests.Session()
             logger.info(
                 f"[{request_id}] - Starting fingerprinting process for {len(df)} rows"
             )
             for index, row in df.iterrows():
-                row_data = row.to_dict()
-                expected_is_vpn = None
-
-                # Use the saved ground truth for scoring
-                if ground_truth is not None:
-                    expected_is_vpn = ground_truth[index]
+                row_data = {
+                    column: _json_safe_value(value)
+                    for column, value in row.items()
+                }
+                expected_is_vpn = ground_truth.loc[index]
 
                 try:
 

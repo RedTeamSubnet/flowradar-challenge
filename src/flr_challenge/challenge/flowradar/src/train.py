@@ -4,7 +4,8 @@ import sys
 
 
 def _is_vpn(row):
-    return str(row.get("is_vpn", "")).strip().lower() in {"true", "1", "yes"}
+    value = row.get("vpn_is_enabled", row.get("is_vpn", ""))
+    return str(value).strip().lower() in {"true", "1", "yes"}
 
 
 def _to_float(value):
