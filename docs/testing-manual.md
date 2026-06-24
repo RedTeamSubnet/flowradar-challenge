@@ -156,3 +156,4 @@ Detector returns HTTP 500:
 
 - Confirm `detect_vpn(features, model)` is defined.
 - Ensure inference code handles missing fields and string numeric values.
+- Empty CSV cells are passed to inference as JSON `null`.

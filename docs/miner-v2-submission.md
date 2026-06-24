@@ -52,7 +52,10 @@ def detect_vpn(features: dict, model: dict) -> bool:
     ...
 ```
 
-`features` is one CSV row from `metrics.csv` after the `is_vpn` ground-truth column has been removed. `model` is the parsed JSON object produced by the training script.
+`features` is one CSV row from `metrics.csv` after the
+`vpn_is_enabled` ground-truth column has been removed. Older datasets using
+`is_vpn` remain supported. Empty CSV cells are delivered as JSON `null`.
+`model` is the parsed JSON object produced by the training script.
 
 Legacy one-argument submissions still run through a fallback:
 
