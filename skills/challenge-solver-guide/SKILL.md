@@ -15,7 +15,8 @@ Primary objective:
 1. Set up and run challenge services:
    - `./skills/challenge-setup/scripts/setup.sh`
    - `./skills/challenge-setup/scripts/healthcheck.sh`
-2. Implement changes only in submission file:
+2. Implement the two submission scripts:
+   - `src/flr_challenge/challenge/flowradar/src/train.py`
    - `src/flr_challenge/challenge/flowradar/src/submissions.py`
 3. Score after each meaningful iteration:
    - `python3 skills/challenge-score/scripts/check_score.py`
@@ -28,19 +29,23 @@ See full map in:
 - `skills/challenge-solver-guide/references/important-files.md`
 
 Core challenge data/input locations:
-- dataset used by scoring replay: `volumes/storage/flowradar-challenge/data/metrics.csv`
-- required submission implementation file: `src/flr_challenge/challenge/flowradar/src/submissions.py`
+- mandatory training dataset: `volumes/storage/flowradar-challenge/data/v2_train_data.csv`
+- production scoring dataset: `volumes/storage/flowradar-challenge/data/v2_test_data.csv`
+- trainer: `src/flr_challenge/challenge/flowradar/src/train.py`
+- inference: `src/flr_challenge/challenge/flowradar/src/submissions.py`
 
-Submission location is mandatory for local scoring flow because the score helper reads content from that file.
+Both locations are mandatory because the score helper submits both files.
 
 # Architecture Overview
 
 High-level pipeline:
-1. Challenge API `/score` receives your submitted `submissions.py` content.
-2. API spins up a flowradar container with the submission mounted.
-3. Dataset rows are replayed; each row sends flow metrics via `products` to `/vpn_detector`.
-4. `detect_vpn(features)` returns a prediction.
-5. API computes final score from classification outcomes.
+1. Challenge API `/score` receives `train.py` and `submissions.py`.
+2. API starts an isolated FlowRadar container with both scripts and mandatory
+   `v2_train_data.csv` mounted read-only.
+3. `POST /train` runs `train.py` and loads its temporary JSON model.
+4. `v2_test_data.csv` rows are replayed through `/vpn_detector`.
+5. `detect_vpn(features, model)` returns a prediction.
+6. API computes final score from classification outcomes.
 
 Implementation implication:
 - strong solutions combine multiple flow signals and robust handling of noisy or missing values.
@@ -64,26 +69,32 @@ Optimization priority:
 
 1. Baseline
    - run current score and capture telemetry.
-2. Feature strategy
+2. Training strategy
+   - learn only from `v2_train_data.csv`.
+   - keep the serialized JSON model compact and deterministic.
+3. Feature strategy
    - identify predictive features from duration, packet length, IAT, and TCP flags.
    - define safe normalization/casting for every used key.
-3. Decision strategy
+4. Decision strategy
    - combine multiple heuristics/signals into a balanced decision.
    - avoid one-feature hard dependence.
-4. Iterate
+5. Iterate
    - run scoring, inspect errors, compare precision/recall tradeoffs.
-5. Harden
+6. Harden
    - ensure logic handles missing fields and unexpected values gracefully.
 
 # Investigation Priorities
 
 1. Feature extraction quality in `submissions.py`
    - robust parsing (`int`/`float` coercion, default values, bounds).
-2. Signal design
+2. Model construction quality in `train.py`
+   - use `vpn_is_enabled` as the v2 label.
+   - produce valid JSON within the configured limit.
+3. Signal design
    - packet size asymmetry, packet rates, timing variability, and flag patterns.
-3. Threshold tuning
+4. Threshold tuning
    - use combinations and score-like aggregation instead of brittle single cutoff.
-4. Failure resilience
+5. Failure resilience
    - never throw for malformed payloads; fallback to safe defaults.
 
 # Common Vulnerability Patterns
@@ -103,6 +114,9 @@ Optimization priority:
 - Start from interpretable features and incrementally tune thresholds.
 - Balance class decisions with explicit precision/recall tradeoff checks.
 - Keep logic lightweight; request failures directly hurt score.
+- Empty CSV cells arrive as JSON `null`; JA4 and sequence values may be strings.
+- V1 data is optional compatibility input only. Never substitute it for v2
+  production training.
 
 # Do / Don't
 
@@ -130,6 +144,9 @@ See:
 
 - Score remains near zero:
   - inspect TP/FP/FN balance and retune thresholds.
+- Training fails:
+  - confirm `train.py` reads `sys.argv[1]`, writes `sys.argv[2]`, and handles
+    `vpn_is_enabled`.
 - Many request errors/timeouts:
   - simplify expensive logic and keep runtime predictable.
 - No meaningful improvement after changes:

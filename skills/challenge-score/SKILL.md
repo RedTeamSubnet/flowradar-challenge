@@ -46,11 +46,14 @@ The script builds payload using the challenge submission format:
 
 `MinerOutput` constraints (from schema):
 - `train_script` is required and called as `python train.py <training_csv> <model_json>`.
-- `inference_script` is required and must expose `detect_vpn(features, model)` or legacy `detect_vpn(features)`.
+- `inference_script` is required and must expose `detect_vpn(features, model)`.
 - each script must respect the configured submission line limit.
 
 Expected `/score` behavior:
-- endpoint scores provided `miner_output` by replaying dataset rows.
+- endpoint trains with mandatory `v2_train_data.csv`.
+- endpoint scores provided `miner_output` by replaying `v2_test_data.csv`.
+- endpoint removes `vpn_is_enabled` before inference.
+- empty CSV cells are sent as JSON `null`.
 - response is a score float in `[0, 1]`.
 
 # Do / Don't
@@ -58,11 +61,14 @@ Expected `/score` behavior:
 Do:
 - keep training logic in `src/flr_challenge/challenge/flowradar/src/train.py`.
 - keep inference logic in `src/flr_challenge/challenge/flowradar/src/submissions.py`.
+- read the training CSV from `sys.argv[1]` and write JSON to `sys.argv[2]`.
+- train only from the provided mandatory v2 CSV.
 - score after every meaningful submission change.
 - inspect telemetry/results when score changes unexpectedly.
 
 Don't:
 - send empty or partial script content.
+- replace mandatory production training with v1 data.
 - move submission logic outside `submissions.py` without updating challenge config.
 - assume stale score state; rerun scoring after edits.
 
@@ -70,20 +76,31 @@ Don't:
 
 - `python3 skills/challenge-score/scripts/check_score.py`
   - reads `train.py` and `submissions.py`
+  - enforces mandatory v2 training, warns on compatibility test data, and
+    validates Git LFS data
   - calls `/score`
+  - allows the configured training timeout plus scoring time
   - prints score or raw error response
 
 # Verification Steps
 
 1. Ensure API server is running on `localhost:10001`.
 2. Ensure root `.env` has `FLR_CHALLENGE_API_KEY`.
-3. Run script and confirm numeric output between `0` and `1`.
-4. Optional: inspect `GET /telemetry` and `GET /results` for deeper validation.
+3. Ensure `FLR_CHALLENGE_TRAIN_CSV_PATH` points to `v2_train_data.csv`.
+4. Ensure `FLR_CHALLENGE_TEST_CSV_PATH` points to `v2_test_data.csv`.
+5. Run `git lfs pull` if the mandatory training file is unavailable.
+6. Run script and confirm numeric output between `0` and `1`.
+7. Optional: inspect `GET /telemetry` and `GET /results` for deeper validation.
 
 # Troubleshooting
 
 - Missing file error:
-  - confirm `src/flr_challenge/challenge/flowradar/src/submissions.py` exists.
+  - confirm both `train.py` and `submissions.py` exist.
+  - confirm Git LFS downloaded `v2_train_data.csv`.
+- Invalid JSON model:
+  - confirm `train.py` writes valid JSON to its second argument.
+- Fingerprint serialization error:
+  - ensure inference handles missing features and JSON `null`.
 - Auth failure:
   - confirm `FLR_CHALLENGE_API_KEY` value in root `.env`.
 - Validation error:
