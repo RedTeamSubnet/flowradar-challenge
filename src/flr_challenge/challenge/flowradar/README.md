@@ -6,7 +6,8 @@ Fingerprint-based VPN detection API using network flow features.
 
 This project provides the isolated detector and training container used by the
 FlowRadar v2 scoring API. Miners submit one training script and one inference
-script. Training runs inside this container against `metrics_100k.csv`.
+script. Training runs inside this container against the mandatory
+`v2_train_data.csv`.
 
 ## Architecture
 
@@ -29,7 +30,7 @@ script. Training runs inside this container against `metrics_100k.csv`.
 Training is called as:
 
 ```sh
-python train.py /path/to/metrics_100k.csv /tmp/model.json
+python train.py /path/to/v2_train_data.csv /tmp/model.json
 ```
 
 The inference script must define:

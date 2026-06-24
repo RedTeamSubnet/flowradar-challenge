@@ -86,18 +86,18 @@ class ChallengeConfig(BaseConfig):
         "127.0.0.1", strip_whitespace=True, min_length=7, max_length=15
     )
     flowradar_port: int = Field(default=8000, ge=1, le=65535)
-    metrics_csv_path: str = Field(
-        "{data_dir}/metrics.csv",
+    test_csv_path: str = Field(
+        "{data_dir}/v2_test_data.csv",
         strip_whitespace=True,
         min_length=2,
         max_length=256,
     )
-    training_metrics_csv_path: str = Field(
-        "{data_dir}/metrics_100k.csv",
+    train_csv_path: str = Field(
+        "{data_dir}/v2_train_data.csv",
         strip_whitespace=True,
         min_length=2,
         max_length=256,
-        description="CSV passed to the miner training script.",
+        description="Mandatory v2 CSV passed to the miner training script.",
     )
     training_timeout_seconds: float = Field(
         default=600,
@@ -127,29 +127,27 @@ class ChallengeConfig(BaseConfig):
         if not os.path.isdir(DATA_DIR):
             os.makedirs(DATA_DIR, exist_ok=True)
 
-        if "{data_dir}" in self.metrics_csv_path:
-            self.metrics_csv_path = self.metrics_csv_path.format(data_dir=DATA_DIR)
+        if "{data_dir}" in self.test_csv_path:
+            self.test_csv_path = self.test_csv_path.format(data_dir=DATA_DIR)
 
-        elif not os.path.isdir(os.path.dirname(self.metrics_csv_path)):
-            os.makedirs(os.path.dirname(self.metrics_csv_path), exist_ok=True)
+        elif not os.path.isdir(os.path.dirname(self.test_csv_path)):
+            os.makedirs(os.path.dirname(self.test_csv_path), exist_ok=True)
 
-        if "{data_dir}" in self.training_metrics_csv_path:
-            self.training_metrics_csv_path = self.training_metrics_csv_path.format(
-                data_dir=DATA_DIR
-            )
+        if "{data_dir}" in self.train_csv_path:
+            self.train_csv_path = self.train_csv_path.format(data_dir=DATA_DIR)
 
-        elif not os.path.isdir(os.path.dirname(self.training_metrics_csv_path)):
-            os.makedirs(os.path.dirname(self.training_metrics_csv_path), exist_ok=True)
+        elif not os.path.isdir(os.path.dirname(self.train_csv_path)):
+            os.makedirs(os.path.dirname(self.train_csv_path), exist_ok=True)
 
-        if not os.access(os.path.dirname(self.metrics_csv_path), os.W_OK):
+        if not os.access(os.path.dirname(self.test_csv_path), os.W_OK):
             raise ValueError(
-                f"Directory for metrics CSV not writable: {os.path.dirname(self.metrics_csv_path)}"
+                f"Directory for metrics CSV not writable: {os.path.dirname(self.test_csv_path)}"
             )
 
-        if not os.access(os.path.dirname(self.training_metrics_csv_path), os.R_OK):
+        if not os.access(os.path.dirname(self.train_csv_path), os.R_OK):
             raise ValueError(
                 "Directory for training metrics CSV not readable: "
-                f"{os.path.dirname(self.training_metrics_csv_path)}"
+                f"{os.path.dirname(self.train_csv_path)}"
             )
 
         return self

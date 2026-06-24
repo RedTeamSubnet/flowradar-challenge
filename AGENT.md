@@ -1,162 +1,161 @@
 # AGENT Guide
 
-This repository is a RedTeam FlowRadar VPN Detection challenge.
+This repository implements the FlowRadar v2 VPN detection challenge. Use this
+file as the default playbook for coding agents working in the repository.
 
-Use this guide as the default operating playbook for any coding agent working in this repo.
+## Challenge Contract
 
-## Challenge Summary
+Miners submit two Python scripts:
 
-- Goal: detect whether a network flow is VPN traffic.
-- Input: each request contains flow-level network features in `products`.
-- Output: return a boolean `is_vpn` prediction.
-- Score driver:
-  - maximize F1 score (precision/recall balance on VPN class).
+- `train.py`
+  - invoked as `python train.py <training_csv> <model_json>`
+  - must train from the CSV in `sys.argv[1]`
+  - must write valid JSON to `sys.argv[2]`
+- `submissions.py`
+  - must expose `detect_vpn(features, model) -> bool`
+  - receives one feature row and the parsed training JSON
 
-Core feature columns used by the challenge dataset:
+The goal is binary VPN classification. The final score is F1 for the positive
+VPN class.
 
-`flow_duration,fwd_num_pkts,bwd_num_pkts,fwd_sum_pkt_len,bwd_sum_pkt_len,fwd_min_pkt_len,fwd_mean_pkt_len,fwd_std_pkt_len,fwd_max_pkt_len,bwd_min_pkt_len,bwd_mean_pkt_len,bwd_std_pkt_len,bwd_max_pkt_len,fwd_min_iat,fwd_mean_iat,fwd_std_iat,fwd_max_iat,bwd_min_iat,bwd_mean_iat,bwd_std_iat,bwd_max_iat,fwd_num_syn_flags,fwd_num_ack_flags,fwd_num_fin_flags,fwd_num_rst_flags,fwd_num_psh_flags,fwd_num_urg_flags,bwd_num_syn_flags,bwd_num_ack_flags,bwd_num_fin_flags,bwd_num_rst_flags,bwd_num_psh_flags,bwd_num_urg_flag`
+## Mandatory Datasets
 
-## Where To Implement
+Production paths:
 
-Only this submission file is intended for solver logic:
+- training: `volumes/storage/flowradar-challenge/data/v2_train_data.csv`
+- scoring: `volumes/storage/flowradar-challenge/data/v2_test_data.csv`
 
+Environment variables:
+
+- `FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"`
+- `FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"`
+
+`v2_train_data.csv` is mandatory. Do not replace it, point production training
+at another file, or train the submitted model from v1 data.
+
+The v2 schema has 110 columns:
+
+- label: `vpn_is_enabled`
+- inference input: the other 109 columns
+
+The repository stores `v2_train_data.csv` with Git LFS. Run `git lfs pull` if
+the file is only an LFS pointer.
+
+## V1 Compatibility Data
+
+`v1_train_data.csv` and `v1_test_data.csv` use 34 columns and label `is_vpn`.
+They are not production training datasets.
+
+Use v1 only as an optional inference robustness check:
+
+1. Train with `v2_train_data.csv`.
+2. Rename v1 test label `is_vpn` to `vpn_is_enabled`.
+3. Reindex v1 test columns to the v2 column order.
+4. Score the adapted v1 test file.
+
+See `docs/testing-manual.md` for the tested conversion command.
+
+## Implementation Files
+
+Miner submission logic:
+
+- `src/flr_challenge/challenge/flowradar/src/train.py`
 - `src/flr_challenge/challenge/flowradar/src/submissions.py`
 
-Important:
-- keep solver implementation inside this file.
-- scoring helpers retrieve submission content from this path.
+Runtime and scoring:
 
-Challenge dataset used during scoring replay:
-- `volumes/storage/flowradar-challenge/data/metrics.csv`
+- `src/flr_challenge/challenge/flowradar/src/app.py`
+- `src/flr_challenge/challenge/api/endpoints/challenge/service.py`
+- `src/flr_challenge/challenge/api/endpoints/challenge/_utils.py`
+- `src/flr_challenge/challenge/api/endpoints/challenge/payload_managers.py`
 
-Execution flow:
+Keep changes scoped to the relevant ownership boundary. Do not move submission
+logic to files that are not included in the miner payload.
 
-1. `/score` receives submission file content.
-2. challenge API boots flowradar runtime with your submission.
-3. each dataset row is sent to `/vpn_detector` as `{"products": row_data}`.
-4. your `detect_vpn(features)` returns `True` or `False`.
-5. scorer compares predictions vs `is_vpn` labels and computes F1.
+## Execution Flow
 
-## Scoring Behavior (Important)
+1. `/score` receives `train_script` and `inference_script`.
+2. The challenge starts an isolated FlowRadar container.
+3. Both scripts and `v2_train_data.csv` are mounted read-only.
+4. The challenge calls the container's `POST /train`.
+5. The container runs `train.py` and loads its temporary model JSON.
+6. The challenge replays `v2_test_data.csv`.
+7. Each row is sent as `{"products": features}` after removing
+   `vpn_is_enabled`.
+8. `detect_vpn(features, model)` returns a boolean.
+9. The scorer computes precision, recall, and F1.
+10. The container and temporary model are removed after scoring.
 
-Scoring is computed from VPN classification outcomes:
+Miner code must never execute in the challenge API process.
 
-- precision = TP / (TP + FP)
-- recall = TP / (TP + FN)
-- final score = F1 = 2 * (precision * recall) / (precision + recall)
+## Data Handling
 
-Additional rule:
+- Empty CSV cells are sent to inference as JSON `null`.
+- JA4 and sequence columns may be strings.
+- Numeric values may be Python `int` or `float`.
+- Inference must tolerate missing or null optional fields.
+- Training must read `vpn_is_enabled` as the v2 label.
+- Avoid unsafe casts, division by zero, and assumptions that every feature is
+  present.
 
-- if request misses exceed `FLR_CHALLENGE_ACCEPTABLE_MISS_COUNT`, scoring loop stops early and score will usually degrade significantly.
+## Constraints
 
-Keep logic efficient and resilient to avoid request failures/timeouts.
+- Training must finish within `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`.
+- Model JSON must remain below `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`.
+- Both scripts must respect the configured submission line limit.
+- Request misses above `FLR_CHALLENGE_ACCEPTABLE_MISS_COUNT` stop replay early.
+- Inference must return a real boolean, not a string or numeric substitute.
+- Do not use bypass, obfuscation, environment escape, or host-access techniques.
 
-## Submission Constraints (Mandatory)
+## Local Workflow
 
-- Implement a pure Python solution in `submissions.py`.
-- Focus on algorithmic logic and pattern finding from the dataset.
-- Do not use binary tree modules, model-based logic, or blob-style packaged model artifacts.
-- Binary tree, hashing-heavy shortcuts, or training-module run patterns are discouraged for this challenge.
-- Keep the submission implementation at or under 1000 lines.
+1. Run `git lfs pull`.
+2. Configure `.env` with the v2 train/test paths.
+3. Run `./skills/challenge-setup/scripts/setup.sh --build`.
+4. Run `./skills/challenge-setup/scripts/healthcheck.sh`.
+5. Run `python3 skills/challenge-score/scripts/check_score.py`.
+6. Inspect `/telemetry`, `/results`, and challenge logs.
+7. Iterate on both training and inference behavior.
+8. Run the optional adapted-v1 test only after v2 validation.
 
-Formatting and linting requirements:
+## Validation
 
-- Run Ruff checks before finalizing, as shown in `examples/miner_commit/README.md`.
-- Command:
-  - `ruff --config volumes/configs/.ruff.toml --check src/flr_challenge/challenge/flowradar/src/submissions.py`
-- Bypass techniques are not accepted (for example: `# noqa` abuse or format-ignore bypass patterns).
+```sh
+python3 -m py_compile \
+  src/flr_challenge/challenge/flowradar/src/train.py \
+  src/flr_challenge/challenge/flowradar/src/submissions.py
 
-## Skills
+ruff --config volumes/configs/.ruff.toml --check \
+  src/flr_challenge/challenge/flowradar/src/train.py \
+  src/flr_challenge/challenge/flowradar/src/submissions.py
+```
 
-### 1) challenge-setup
+Production-equivalent validation must keep:
 
-- Location: `skills/challenge-setup/SKILL.md`
-- Scripts:
-  - `skills/challenge-setup/scripts/setup.sh`
-  - `skills/challenge-setup/scripts/healthcheck.sh`
-- Use when:
-  - preparing local environment
-  - validating `.env` and API availability
-  - booting challenge services with Docker Compose
-- Quick usage:
-  - `./skills/challenge-setup/scripts/setup.sh`
-  - `./skills/challenge-setup/scripts/setup.sh --build`
-  - `./skills/challenge-setup/scripts/healthcheck.sh`
-
-### 2) challenge-score
-
-- Location: `skills/challenge-score/SKILL.md`
-- Script: `skills/challenge-score/scripts/check_score.py`
-- Use when:
-  - running `/score` against current `submissions.py`
-  - validating payload/schema expectations
-  - checking endpoint-level score behavior quickly
-- Quick usage:
-  - `python3 skills/challenge-score/scripts/check_score.py`
-
-### 3) challenge-solver-guide
-
-- Location: `skills/challenge-solver-guide/SKILL.md`
-- References:
-  - `skills/challenge-solver-guide/references/important-files.md`
-  - `skills/challenge-solver-guide/references/do-and-dont.md`
-- Use when:
-  - designing robust VPN detection logic
-  - selecting stable predictive flow features
-  - iterating toward better precision/recall tradeoff
-
-## Agent Workflow (Recommended)
-
-1. Setup
-   - run challenge setup + health check.
-2. Baseline
-   - run score script and record F1.
-3. Analyze
-   - inspect `submissions.py` behavior and failure patterns.
-4. Implement
-   - update feature engineering and decision logic in `detect_vpn`.
-5. Re-score
-   - run score script after each meaningful change.
-6. Diagnose
-   - use telemetry/results and logs to understand regressions.
-7. Iterate
-   - tune thresholds and feature combinations for stronger F1.
+- mandatory v2 training data
+- production v2 test data
+- configured timeout and model-size limit
+- configured request timeout and acceptable miss count
 
 ## Key Endpoints
 
-- `POST /score` - evaluates current submission.
-- `GET /status` - scoring state.
-- `GET /results` - stored scoring outcomes.
-- `GET /telemetry` - runtime, network, size, score metrics.
-- `GET /task` - returns current task input shape.
+- `POST /score`
+- `GET /status`
+- `GET /results`
+- `GET /telemetry`
+- `GET /task`
 
-## Environment Notes
+The isolated detector also exposes:
 
-- `FLR_CHALLENGE_API_KEY` is required for protected challenge endpoints.
-- `DEBUG=true` increases logs and helps troubleshooting.
-- For final production-grade validation, do not alter:
-  - `FLR_CHALLENGE_ACCEPTABLE_MISS_COUNT`
-  - `FLR_CHALLENGE_SINGLE_REQUEST_TIMEOUT`
+- `GET /health`
+- `POST /train`
+- `POST /vpn_detector`
 
-## Debugging
+## Skills
 
-- API/container startup issues:
-  - `docker compose ps`
-  - `docker compose logs -f challenge-api`
-- Scoring anomalies:
-  - check `/telemetry` and `/results`
-  - inspect precision/recall tradeoffs and class bias
-- Runtime failures:
-  - reduce expensive operations in request path
-  - handle missing/malformed fields defensively
-
-## Solver Quality Bar
-
-Avoid simplistic fixed-threshold logic with no feature interaction.
-
-Preferred approach:
-
-- robust feature extraction from packet, duration, timing, and flag signals
-- canonical numeric handling (missing values, safe casting, bounded transforms)
-- balanced decision rules that improve both precision and recall
-- resilience to noisy or partially missing flow metrics
+- `skills/challenge-setup/SKILL.md`
+  - environment setup, Git LFS verification, Compose startup, health checks
+- `skills/challenge-score/SKILL.md`
+  - submit both scripts and inspect score-related endpoints
+- `skills/challenge-solver-guide/SKILL.md`
+  - design the training/model/inference strategy and improve F1

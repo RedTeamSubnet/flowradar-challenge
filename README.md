@@ -11,8 +11,8 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
 - Challenge controller and manager
 - Challenge API (FastAPI)
 - FlowRadar v2 two-stage submission flow:
-    - miner training script receives `metrics_100k.csv` and writes a per-run model JSON
-    - miner inference script receives each `metrics.csv` row plus the trained model
+    - miner training script receives the mandatory `v2_train_data.csv`
+    - miner inference script receives each `v2_test_data.csv` row plus the trained model
 
 ---
 
@@ -22,14 +22,17 @@ Miners submit two Python scripts:
 
 1. `train_script`
     - Called as `python train.py <training_csv> <model_json>`.
-    - Receives the configured training CSV, normally `metrics_100k.csv`.
+    - Receives `v2_train_data.csv`; miners cannot select or replace this dataset.
     - Must write a valid JSON model file.
 2. `inference_script`
     - Exposes `detect_vpn(features, model) -> bool`.
     - Runs inside the FlowRadar detector container.
-    - Receives one row from `metrics.csv` at a time and the JSON model produced by training.
+    - Receives one row from `v2_test_data.csv` at a time and the JSON model produced by training.
 
-The challenge API first trains the miner model into a temporary `model.json` for the current scoring run. It then mounts that model JSON into the FlowRadar container and runs the existing scoring replay against `metrics.csv`.
+The challenge API mounts `v2_train_data.csv` and the submitted scripts into the
+isolated FlowRadar container. The container trains the model, keeps the model
+temporary for that scoring run, and serves inference while the challenge
+replays `v2_test_data.csv`.
 
 ## 🐤 Getting Started
 
@@ -45,6 +48,7 @@ The challenge API first trains the miner model into a temporary `model.json` for
     - _[arm64/aarch64] [Miniforge (v3)](https://github.com/conda-forge/miniforge)_
     - _[Python virtual environment] [venv](https://docs.python.org/3/library/venv.html)_
 - Install [**git**](https://git-scm.com/downloads)
+- Install [**Git LFS**](https://git-lfs.com/) for `v2_train_data.csv`
 - Setup an [**SSH key**](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh)
 
 ### 2. 📥 Download or clone the repository
@@ -65,14 +69,16 @@ cd ~/workspaces/projects
 
 ```sh
 git clone https://github.com/RedTeamSubnet/flowradar_v1.git && \
-    cd flowradar_v1
+    cd flowradar_v1 && \
+    git lfs pull
 ```
 
 **OPTION B.** Clone the repository (for **DEVELOPMENT**: git + ssh key):
 
 ```sh
 git clone git@github.com:RedTeamSubnet/flowradar_v1.git && \
-    cd flowradar_v1
+    cd flowradar_v1 && \
+    git lfs pull
 ```
 
 **OPTION C.** Download source code:
@@ -172,8 +178,8 @@ FLR_API_PORT=10001
 # FLR_API_CONFIGS_DIR="/etc/flowradar-challenge"
 # FLR_API_LOGS_DIR="/var/log/flowradar-challenge"
 # FLR_API_DATA_DIR="/var/lib/flowradar-challenge"
-# FLR_CHALLENGE_TRAINING_METRICS_CSV_PATH="{data_dir}/metrics_100k.csv"
-# FLR_CHALLENGE_METRICS_CSV_PATH="{data_dir}/metrics.csv"
+# FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"
+# FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"
 # FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS=600
 # FLR_API_TMP_DIR="/tmp/flowradar-challenge"
 # FLR_API_VERSION="1"

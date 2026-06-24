@@ -76,7 +76,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
                 request_id=request_id,
                 file_path=submission_path,
                 training_path=training_path,
-                training_csv_path=config.challenge.training_metrics_csv_path,
+                training_csv_path=config.challenge.train_csv_path,
                 flowradar_port=config.challenge.flowradar_port,
             )
             _utils.start_log_streaming_thread(container)
@@ -110,7 +110,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
                 f"model size={model_size} bytes"
             )
 
-            df = pd.read_csv(config.challenge.metrics_csv_path)
+            df = pd.read_csv(config.challenge.test_csv_path)
             runtime_start = time.perf_counter()
 
             label_column = next(
@@ -133,8 +133,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             )
             for index, row in df.iterrows():
                 row_data = {
-                    column: _json_safe_value(value)
-                    for column, value in row.items()
+                    column: _json_safe_value(value) for column, value in row.items()
                 }
                 expected_is_vpn = ground_truth.loc[index]
 
@@ -208,6 +207,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 
     return final_score
+
 
 __all__ = [
     "get_task",

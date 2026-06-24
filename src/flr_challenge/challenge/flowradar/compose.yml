@@ -16,7 +16,7 @@ services:
       FLOWRADAR_MODEL_JSON_SIZE_LIMIT: ${FLOWRADAR_MODEL_JSON_SIZE_LIMIT:-20971520}
     volumes:
       - "./src/train.py:/app/train.py:ro"
-      - "${FLOWRADAR_TRAINING_CSV_PATH_HOST:-../../../../volumes/storage/flowradar-challenge/data/metrics_100k.csv}:/data/training.csv:ro"
+      - "${FLOWRADAR_TRAINING_CSV_PATH_HOST:-../../../../volumes/storage/flowradar-challenge/data/v2_train_data.csv}:/data/training.csv:ro"
     ports:
       - "${PORT:-8000}:${PORT:-8000}"
     read_only: true
