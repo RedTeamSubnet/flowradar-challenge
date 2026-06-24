@@ -8,9 +8,25 @@ services:
       TERM: ${TERM:-xterm}
       TZ: ${TZ:-UTC}
       PORT: ${PORT:-8000}
-      FLOWRADAR_MODEL_PATH: ${FLOWRADAR_MODEL_PATH:-/app/model.json}
+      PYTHONDONTWRITEBYTECODE: "1"
+      FLOWRADAR_TRAINING_PATH: /app/train.py
+      FLOWRADAR_TRAINING_CSV_PATH: /data/training.csv
+      FLOWRADAR_MODEL_PATH: /tmp/model.json
+      FLOWRADAR_TRAINING_TIMEOUT_SECONDS: ${FLOWRADAR_TRAINING_TIMEOUT_SECONDS:-600}
+      FLOWRADAR_MODEL_JSON_SIZE_LIMIT: ${FLOWRADAR_MODEL_JSON_SIZE_LIMIT:-20971520}
     volumes:
-      - "${FLOWRADAR_MODEL_PATH_HOST:-./model.json}:${FLOWRADAR_MODEL_PATH:-/app/model.json}:ro"
+      - "./src/train.py:/app/train.py:ro"
+      - "${FLOWRADAR_TRAINING_CSV_PATH_HOST:-../../../../volumes/storage/flowradar-challenge/data/metrics_100k.csv}:/data/training.csv:ro"
     ports:
       - "${PORT:-8000}:${PORT:-8000}"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 512
+    mem_limit: 4g
+    cpus: 2
     tty: true

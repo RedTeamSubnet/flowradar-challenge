@@ -1,7 +1,4 @@
-import json
 import os
-import subprocess
-import sys
 import tempfile
 import time
 
@@ -44,7 +41,6 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
 
         training_path = os.path.join(tmp_dir, "train.py")
         submission_path = os.path.join(tmp_dir, "submissions.py")
-        model_path = os.path.join(tmp_dir, "model.json")
         with open(training_path, "w", encoding="utf-8", newline="\n") as f:
             f.write(miner_output.train_script)
         with open(submission_path, "w", encoding="utf-8", newline="\n") as f:
@@ -63,23 +59,11 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
                 f"[{request_id}] - Starting model training with timeout "
                 f"{config.challenge.training_timeout_seconds}s"
             )
-            _run_training_script(
-                request_id=request_id,
-                training_path=training_path,
-                model_path=model_path,
-                tmp_dir=tmp_dir,
-            )
-            training_seconds = time.perf_counter() - training_start
-            total_file_size += os.path.getsize(model_path)
-            logger.info(
-                f"[{request_id}] - Training completed in {training_seconds:.3f}s; "
-                f"model size={os.path.getsize(model_path)} bytes"
-            )
-
             container, ip_address = _utils.run_flowradar_container(
                 request_id=request_id,
                 file_path=submission_path,
-                model_path=model_path,
+                training_path=training_path,
+                training_csv_path=config.challenge.training_metrics_csv_path,
                 flowradar_port=config.challenge.flowradar_port,
             )
             _utils.start_log_streaming_thread(container)
@@ -93,6 +77,26 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             logger.info(f"[{request_id}] - Detector container is healthy")
 
             base_url = f"http://{ip_address}:{config.challenge.flowradar_port}"
+            training_response = requests.post(
+                f"{base_url}/train",
+                timeout=config.challenge.training_timeout_seconds + 10,
+            )
+            training_response.raise_for_status()
+            training_result = training_response.json()
+            training_seconds = time.perf_counter() - training_start
+            model_size = int(training_result["model_size_bytes"])
+            if (
+                training_result.get("status") != "trained"
+                or model_size < 1
+                or model_size > config.challenge.model_json_size_limit
+            ):
+                raise ValueError("Detector returned an invalid training result")
+            total_file_size += model_size
+            logger.info(
+                f"[{request_id}] - Training completed in {training_seconds:.3f}s; "
+                f"model size={model_size} bytes"
+            )
+
             df = pd.read_csv(config.challenge.metrics_csv_path)
             runtime_start = time.perf_counter()
 
@@ -178,62 +182,11 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             )
 
             if container:
-                # _utils.cleanup_container(container)
+                _utils.cleanup_container(container)
                 logger.info(f"[{request_id}] - Detector container cleaned up")
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 
     return final_score
-
-
-def _run_training_script(
-    request_id: str,
-    training_path: str,
-    model_path: str,
-    tmp_dir: str,
-) -> None:
-    training_csv_path = config.challenge.training_metrics_csv_path
-    if not os.path.isfile(training_csv_path):
-        raise FileNotFoundError(f"Training CSV not found: {training_csv_path}")
-
-    command = [
-        sys.executable,
-        training_path,
-        training_csv_path,
-        model_path,
-    ]
-    try:
-        result = subprocess.run(
-            command,
-            cwd=tmp_dir,
-            capture_output=True,
-            text=True,
-            timeout=config.challenge.training_timeout_seconds,
-            check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
-        logger.error(
-            f"[{request_id}] - Training timed out after "
-            f"{config.challenge.training_timeout_seconds}s"
-        )
-        raise TimeoutError("Training timed out") from exc
-
-    if result.stdout:
-        logger.info(f"[{request_id}] - Training stdout:\n{result.stdout[-4000:]}")
-    if result.stderr:
-        logger.warning(f"[{request_id}] - Training stderr:\n{result.stderr[-4000:]}")
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Training script failed with exit code {result.returncode}")
-    if not os.path.isfile(model_path):
-        raise FileNotFoundError("Training script did not create model JSON")
-    model_size = os.path.getsize(model_path)
-    if model_size > config.challenge.model_json_size_limit:
-        raise ValueError(
-            f"Model JSON exceeds size limit of {config.challenge.model_json_size_limit} bytes"
-        )
-    with open(model_path, encoding="utf-8") as model_file:
-        json.load(model_file)
-
 
 __all__ = [
     "get_task",

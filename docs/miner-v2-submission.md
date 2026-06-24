@@ -7,7 +7,9 @@ FlowRadar v2 submissions contain two Python files encoded in the `/score` payloa
 
 ## Training Script
 
-The challenge API writes the submitted training content to `train.py` and calls:
+The challenge API mounts the submitted training content read-only into an
+isolated FlowRadar container. It calls the container's `POST /train` endpoint,
+which executes:
 
 ```sh
 python train.py <training_csv> <model_json>
@@ -31,12 +33,17 @@ The training script must:
 - write valid JSON to the second argument
 - keep the JSON below `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`, default `20 MiB`
 - avoid depending on files outside the submitted script and provided CSV
+- stay within the configured container CPU, memory, and PID limits
 
-The challenge writes the validated model JSON to a temporary scoring directory and mounts it into the detector container for that same run.
+The model JSON is written to `/tmp/model.json` inside the detector container,
+validated there, and loaded into memory for that scoring run. The challenge API
+process does not execute miner Python and does not receive or persist the model
+file.
 
 ## Inference Script
 
-The challenge API writes the submitted inference content to `submissions.py` and mounts it into the FlowRadar detector container.
+The challenge API writes the submitted inference content to `submissions.py`
+and mounts it read-only into the same FlowRadar detector container.
 
 The preferred interface is:
 

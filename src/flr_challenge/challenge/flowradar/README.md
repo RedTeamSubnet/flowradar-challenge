@@ -4,13 +4,15 @@ Fingerprint-based VPN detection API using network flow features.
 
 ## Overview
 
-This project provides the detector container used by the FlowRadar v2 scoring API. Miners submit one training script and one inference script. The challenge runs training on `metrics_100k.csv` and mounts the produced per-run JSON into this detector container as `/app/model.json`.
+This project provides the isolated detector and training container used by the
+FlowRadar v2 scoring API. Miners submit one training script and one inference
+script. Training runs inside this container against `metrics_100k.csv`.
 
 ## Architecture
 
 - **Training Logic**: `train.py` receives the training CSV and writes model JSON
 - **Detection Logic**: `submissions.py` exposes `detect_vpn(features, model)`
-- **Model Loading**: `app.py` loads `FLOWRADAR_MODEL_PATH`, default `/app/model.json`
+- **Model Loading**: `POST /train` loads the generated `/tmp/model.json`
 - **API**: FastAPI for serving VPN detection requests
 
 ## Key Components
@@ -37,7 +39,9 @@ def detect_vpn(features: dict, model: dict) -> bool:
     ...
 ```
 
-The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `600` seconds. The generated model JSON is mounted into this container at `/app/model.json` for the current scoring run.
+The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to
+`600` seconds. The generated model JSON remains temporary inside this container
+for the current scoring run.
 
 ## API Endpoints
 
@@ -45,9 +49,14 @@ The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to `
 
 Health check endpoint.
 
+### POST /train
+
+Run the mounted training script inside the container, validate its model JSON,
+and load that model for detection.
+
 ### POST /vpn_detector
 
-Detect if traffic is VPN based on network flow features and the mounted model JSON.
+Detect if traffic is VPN based on network flow features and the trained model.
 
 **Request:**
 

@@ -30,7 +30,7 @@ python3 -m py_compile \
   src/flr_challenge/challenge/flowradar/src/submissions.py
 ```
 
-Run the trainer directly:
+For a quick miner-only check, run the trainer directly:
 
 ```sh
 python3 src/flr_challenge/challenge/flowradar/src/train.py \
@@ -67,6 +67,10 @@ PY
 ```
 
 The output should be `True` or `False`.
+
+This direct command is only a local development check. Production scoring
+never runs `train.py` in the challenge API process; it calls `POST /train`
+inside the isolated FlowRadar container.
 
 ## 3. Start the Challenge API
 
@@ -136,6 +140,7 @@ Training timeout:
 
 - Increase only for local experiments with `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`.
 - Production should keep the configured challenge limit.
+- The timeout is enforced by the FlowRadar container's `/train` endpoint.
 
 Missing training CSV:
 
