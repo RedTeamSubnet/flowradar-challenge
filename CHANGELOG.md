@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0.0 (2026-06-24)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### ✨ Features
+* FlowRadar V2 by @aliyuldashev in https://github.com/RedTeamSubnet/flowradar-challenge/pull/2
+
+## New Contributors
+* @aliyuldashev made their first contribution in https://github.com/RedTeamSubnet/flowradar-challenge/pull/2
+
+**Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/1.1.1...v2.0.0
+
 ## v1.1.1 (2026-05-20)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
