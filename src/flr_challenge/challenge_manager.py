@@ -22,14 +22,14 @@ class FLRChallengeManager(ChallengeManager):
         self.expiration_days = emission_config.get("expiration_days", 15)
         self.alpha = emission_config.get("alpha", 0.002)
         self.t_max = emission_config.get("t_max", 10)
-        self.reward_temperature = emission_config.get("reward_temperature", 0.2)
+        self.reward_temperature = emission_config.get("reward_temperature", 0.05)
         self.comparison_min_acceptable_score = comparison_config.get(
             "min_acceptable_score", 0.7
         )
 
         self.max_similarity = 0.4
         self.min_similarity = 0
-        self.min_score = 0.9
+        self.min_score = 0.80
         self.break_point = 0.6
         self.max_input = 1.0
         self.min_value = 0
