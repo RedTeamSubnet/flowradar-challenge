@@ -76,7 +76,11 @@ class MinerOutput(BaseModel):
         min_length=2,
         max_length=2,
         title="Commit Files",
-        description="Exactly train.py and submissions.py.",
+        description=(
+            "Exactly train.py and submissions.py. Embedded or pretrained learned "
+            "weights are prohibited; inference may only use the model generated "
+            "by train.py during the current scoring run."
+        ),
         examples=[
             [
                 {

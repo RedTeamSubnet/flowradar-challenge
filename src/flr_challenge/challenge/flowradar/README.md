@@ -44,6 +44,10 @@ The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to
 `600` seconds. The generated model JSON remains temporary inside this container
 for the current scoring run.
 
+Pretrained or embedded learned weights are prohibited in `train.py` and
+`submissions.py`. Training must generate the model from the provided v2 CSV
+during the current run, and inference may only use the loaded generated model.
+
 ## API Endpoints
 
 ### GET /health
