@@ -1,24 +1,33 @@
 # FlowRadar v2 Testing Manual
 
-Use this manual to test a miner submission before scoring it in production.
+Use this manual to test a miner submission before production scoring.
 
-## 1. Prepare Data
+## 1. Dataset Contract
 
-Expected local data paths:
+Production uses these files:
 
 ```text
-volumes/storage/flowradar-challenge/data/metrics_100k.csv
-volumes/storage/flowradar-challenge/data/metrics.csv
+volumes/storage/flowradar-challenge/data/v2_train_data.csv
+volumes/storage/flowradar-challenge/data/v2_test_data.csv
 ```
 
-`metrics_100k.csv` is used only for training. `metrics.csv` is used for scoring.
+`v2_train_data.csv` is mandatory. The challenge passes this exact file to the
+submitted `train.py` as its first argument. Miners cannot choose another
+training dataset in production.
 
-If your local data directory still has an older or alternate training filename, create `metrics_100k.csv` once. For example:
+The v2 schema contains 110 columns:
 
-```sh
-cp volumes/storage/flowradar-challenge/data/<source-training-file>.csv \
-  volumes/storage/flowradar-challenge/data/metrics_100k.csv
+- label: `vpn_is_enabled`
+- inference features: the remaining 109 columns
+
+Production configuration:
+
+```dotenv
+FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"
+FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"
 ```
+
+Do not point `FLR_CHALLENGE_TRAIN_CSV_PATH` at v1 data when validating a miner.
 
 ## 2. Fast Script Checks
 
@@ -30,11 +39,11 @@ python3 -m py_compile \
   src/flr_challenge/challenge/flowradar/src/submissions.py
 ```
 
-For a quick miner-only check, run the trainer directly:
+Run the trainer against the mandatory v2 training data:
 
 ```sh
 python3 src/flr_challenge/challenge/flowradar/src/train.py \
-  volumes/storage/flowradar-challenge/data/metrics_100k.csv \
+  volumes/storage/flowradar-challenge/data/v2_train_data.csv \
   /tmp/flowradar_model.json
 ```
 
@@ -44,7 +53,7 @@ Validate the model JSON:
 python3 -m json.tool /tmp/flowradar_model.json >/dev/null
 ```
 
-Run a minimal inference import check:
+Run a minimal inference check:
 
 ```sh
 python3 - <<'PY'
@@ -66,13 +75,67 @@ print(mod.detect_vpn(row, model))
 PY
 ```
 
-The output should be `True` or `False`.
+The output must be `True` or `False`.
 
-This direct command is only a local development check. Production scoring
-never runs `train.py` in the challenge API process; it calls `POST /train`
-inside the isolated FlowRadar container.
+This direct trainer command is only a development check. Production calls
+`POST /train` inside the isolated FlowRadar container.
 
-## 3. Start the Challenge API
+## 3. Optional v1 Compatibility Test
+
+The v1 datasets have 34 columns and use `is_vpn` as the label. They are not
+valid production training replacements. Use them only to test whether inference
+handles a reduced legacy feature set.
+
+Create a temporary v1 test file with the v2 shape:
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+
+import pandas as pd
+
+data_dir = Path("volumes/storage/flowradar-challenge/data")
+v1 = pd.read_csv(data_dir / "v1_test_data.csv")
+v2_columns = pd.read_csv(data_dir / "v2_train_data.csv", nrows=0).columns
+
+v1 = v1.rename(columns={"is_vpn": "vpn_is_enabled"})
+v1 = v1.reindex(columns=v2_columns)
+v1.to_csv("/tmp/v1_test_v2_shape.csv", index=False)
+PY
+```
+
+This transformation:
+
+- renames `is_vpn` to `vpn_is_enabled`
+- preserves v1 features that also exist in v2
+- adds missing v2-only columns as empty values
+- orders columns exactly like the v2 schema
+
+Keep training on `v2_train_data.csv`, but temporarily score the adapted v1
+test file:
+
+```dotenv
+FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"
+FLR_CHALLENGE_TEST_CSV_PATH="/tmp/v1_test_v2_shape.csv"
+```
+
+When the challenge runs in Docker, the test file must be inside the mounted
+data directory. Use:
+
+```sh
+cp /tmp/v1_test_v2_shape.csv \
+  volumes/storage/flowradar-challenge/data/v1_test_v2_shape.csv
+```
+
+Then configure:
+
+```dotenv
+FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v1_test_v2_shape.csv"
+```
+
+Restore `v2_test_data.csv` before production-equivalent scoring.
+
+## 4. Start the Challenge API
 
 Create `.env` if needed:
 
@@ -80,13 +143,7 @@ Create `.env` if needed:
 cp .env.example .env
 ```
 
-Start compose:
-
-```sh
-./compose.sh start -l
-```
-
-or:
+Start Compose:
 
 ```sh
 docker compose up -d --remove-orphans --force-recreate
@@ -99,61 +156,50 @@ Check health:
 curl -s http://localhost:10001/health
 ```
 
-## 4. Score the Local Reference Submission
+## 5. Score the Local Submission
 
-The helper reads:
-
-- `src/flr_challenge/challenge/flowradar/src/train.py`
-- `src/flr_challenge/challenge/flowradar/src/submissions.py`
-
-Then it sends the v2 payload to `/score`:
+The helper reads the reference `train.py` and `submissions.py`, then sends the
+v2 payload to `/score`:
 
 ```sh
 python3 skills/challenge-score/scripts/check_score.py
 ```
 
-Expected result: a numeric F1 score from `0` to `1`.
+Expected result: an F1 score from `0` to `1`.
 
-## 5. Inspect Telemetry and Results
-
-Telemetry:
+## 6. Inspect Results
 
 ```sh
 curl -s http://localhost:10001/telemetry | jq
-```
-
-Stored row-level results:
-
-```sh
 curl -s http://localhost:10001/results | jq
-```
-
-Status:
-
-```sh
 curl -s http://localhost:10001/status | jq
 ```
 
-## 6. Common Failures
-
-Training timeout:
-
-- Increase only for local experiments with `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`.
-- Production should keep the configured challenge limit.
-- The timeout is enforced by the FlowRadar container's `/train` endpoint.
+## 7. Common Failures
 
 Missing training CSV:
 
-- Confirm `FLR_API_DATA_DIR` points to the directory containing `metrics_100k.csv`.
-- In compose, confirm `volumes/storage/flowradar-challenge/data/metrics_100k.csv` exists.
+- Confirm `FLR_CHALLENGE_TRAIN_CSV_PATH` resolves to `v2_train_data.csv`.
+- Confirm Git LFS downloaded the dataset with `git lfs pull`.
+
+Wrong schema or label:
+
+- Production v2 uses `vpn_is_enabled`.
+- V1 uses `is_vpn` and must be adapted before using it as test data.
+- Never train the production submission on `v1_train_data.csv`.
 
 Invalid model JSON:
 
-- The training script must write JSON to the exact second CLI argument.
+- Write JSON to the exact second CLI argument.
 - Use `json.dump(...)`, not `repr(...)`.
 
-Detector returns HTTP 500:
+Detector request failure:
 
-- Confirm `detect_vpn(features, model)` is defined.
-- Ensure inference code handles missing fields and string numeric values.
-- Empty CSV cells are passed to inference as JSON `null`.
+- Define `detect_vpn(features, model)`.
+- Handle absent features and JSON `null`; adapted v1 rows lack v2-only fields.
+- Empty CSV cells are sent as JSON `null`.
+
+Training timeout:
+
+- Production enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`.
+- Increasing it locally does not change the production limit.

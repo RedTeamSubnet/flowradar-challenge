@@ -1,72 +1,86 @@
 # Miner v2 Submission Guide
 
-FlowRadar v2 submissions contain two Python files encoded in the `/score` payload:
+FlowRadar v2 submissions contain:
 
 - `train_script`
 - `inference_script`
 
-## Training Script
+## Mandatory Training Dataset
 
-The challenge API mounts the submitted training content read-only into an
-isolated FlowRadar container. It calls the container's `POST /train` endpoint,
-which executes:
+Production always trains miners with:
+
+```text
+volumes/storage/flowradar-challenge/data/v2_train_data.csv
+```
+
+Inside the challenge container, the path is configured by:
+
+```dotenv
+FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"
+```
+
+This dataset is mandatory. Miners cannot provide a dataset path, replace the
+dataset, or request a different production training file.
+
+The repository stores this dataset with Git LFS. Run `git lfs pull` after
+cloning if the local file contains only an LFS pointer.
+
+The challenge mounts the submitted trainer and v2 data read-only into the
+isolated FlowRadar container. The container executes:
 
 ```sh
-python train.py <training_csv> <model_json>
+python train.py <v2_train_csv> <model_json>
 ```
 
-The default training CSV is:
-
-```text
-{FLR_API_DATA_DIR}/metrics_100k.csv
-```
-
-For local compose runs this maps to:
-
-```text
-volumes/storage/flowradar-challenge/data/metrics_100k.csv
-```
+The v2 dataset has 110 columns. Its label is `vpn_is_enabled`; the other 109
+columns are model features.
 
 The training script must:
 
+- read the CSV path from `sys.argv[1]`
+- write valid JSON to `sys.argv[2]`
 - finish before `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, default `600`
-- write valid JSON to the second argument
-- keep the JSON below `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`, default `20 MiB`
-- avoid depending on files outside the submitted script and provided CSV
-- stay within the configured container CPU, memory, and PID limits
+- keep JSON below `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`, default `20 MiB`
+- work using only the submitted script, installed dependencies, and provided CSV
 
-The model JSON is written to `/tmp/model.json` inside the detector container,
-validated there, and loaded into memory for that scoring run. The challenge API
-process does not execute miner Python and does not receive or persist the model
-file.
+The generated model remains temporary inside the detector container and is
+destroyed after scoring.
 
 ## Inference Script
 
-The challenge API writes the submitted inference content to `submissions.py`
-and mounts it read-only into the same FlowRadar detector container.
-
-The preferred interface is:
+The inference script must expose:
 
 ```python
 def detect_vpn(features: dict, model: dict) -> bool:
     ...
 ```
 
-`features` is one CSV row from `metrics.csv` after the
-`vpn_is_enabled` ground-truth column has been removed. Older datasets using
-`is_vpn` remain supported. Empty CSV cells are delivered as JSON `null`.
-`model` is the parsed JSON object produced by the training script.
+Production inference rows come from `v2_test_data.csv`. The challenge removes
+`vpn_is_enabled` before calling the miner function. Empty CSV cells are passed
+as JSON `null`.
 
-Legacy one-argument submissions still run through a fallback:
+Inference code should tolerate:
 
-```python
-def detect_vpn(features: dict) -> bool:
-    ...
-```
+- missing or null optional values
+- numeric values represented as Python `int` or `float`
+- string-valued JA4 and sequence fields
 
-New miners should use the two-argument interface.
+## V1 Compatibility Testing
 
-## Score Payload Shape
+The provided v1 datasets use 34 columns and the label `is_vpn`. They are only
+for optional compatibility testing. They are not accepted as substitutes for
+`v2_train_data.csv`.
+
+To test against v1:
+
+1. Train on `v2_train_data.csv`.
+2. Rename the v1 test label from `is_vpn` to `vpn_is_enabled`.
+3. Reindex the v1 test columns to the v2 schema.
+4. Score the adapted v1 file.
+
+See [Testing Manual](./testing-manual.md) for the exact conversion command.
+
+## Score Payload
 
 ```json
 {
@@ -80,20 +94,21 @@ New miners should use the two-argument interface.
 }
 ```
 
-## Minimal Example
-
-Training:
+## Minimal Trainer
 
 ```python
 import json
 import sys
 
+training_csv = sys.argv[1]
 model_path = sys.argv[2]
+
+# Train using training_csv.
 with open(model_path, "w", encoding="utf-8") as model_file:
     json.dump({"always": False}, model_file)
 ```
 
-Inference:
+## Minimal Inference
 
 ```python
 def detect_vpn(features, model):
