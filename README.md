@@ -1,5 +1,7 @@
 # FlowRadar: VPN Detection
 
+![FlowRadar v2 poster](docs/assets/images/poster.png)
+
 This is a RedTeam Subnet FlowRadar VPN detection challenge repository.
 
 Documentation page: <https://docs.theredteam.io/latest/challenges>
