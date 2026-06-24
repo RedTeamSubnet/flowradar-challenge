@@ -15,7 +15,7 @@ FlowRadar v2 uses a two-stage miner submission:
 
 | Path | Purpose |
 | --- | --- |
-| `volumes/storage/flowradar-challenge/data/v2_train_data.csv` | Mandatory production training CSV passed to miner `train_script` |
+| `volumes/storage/flowradar-challenge/data/v2_train_data.csv` | Mandatory production training CSV passed to submitted `train.py` |
 | `volumes/storage/flowradar-challenge/data/v2_test_data.csv` | Production scoring dataset replayed through the detector |
 | `volumes/storage/flowradar-challenge/data/v1_test_data.csv` | Optional compatibility test data; must be adapted to the v2 shape |
 | `src/flr_challenge/challenge/flowradar/src/train.py` | Reference trainer |

@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from potato_util.generator import gen_random_string
 
@@ -35,54 +35,84 @@ class MinerInput(BaseModel):
     )
 
 
-class MinerOutput(BaseModel):
-    train_script: str = Field(
+class CommitFile(BaseModel):
+    file_name: str = Field(
         ...,
-        title="Training Python File",
-        description=(
-            "Python script content. It is called as "
-            "`python train.py <training_csv> <model_json>` and must write model JSON."
-        ),
-        examples=[
-            (
-                _training_py
-                if _training_py
-                else "import json, sys\njson.dump({}, open(sys.argv[2], 'w'))\n"
-            )
-        ],
+        min_length=1,
+        max_length=128,
+        title="File Name",
+        description="Submission file name. Must be train.py or submissions.py.",
     )
-    inference_script: str = Field(
+    content: str = Field(
         ...,
-        title="Inference Python File",
-        description=(
-            "Python script content exposing `detect_vpn(features, model)` "
-            "or legacy `detect_vpn(features)`."
-        ),
-        examples=[
-            (
-                _submission_py
-                if _submission_py
-                else "def detect_vpn(features, model):\n    return False\n"
-            )
-        ],
+        min_length=1,
+        title="File Content",
+        description="Complete Python source for this submission file.",
     )
 
-    @field_validator("train_script", "inference_script", mode="after")
+    @field_validator("file_name", mode="after")
     @classmethod
-    def _check_submission_py(cls, val: str) -> str:
-        """
-        Validate submitted scripts based on the challenge configuration.
-            - Each file should not exceed the line limit.
-        """
+    def _check_file_name(cls, value: str) -> str:
+        if value not in {"train.py", "submissions.py"}:
+            raise ValueError("file_name must be 'train.py' or 'submissions.py'")
+        return value
+
+    @field_validator("content", mode="after")
+    @classmethod
+    def _check_content(cls, value: str) -> str:
         if config.challenge.submission_length_limit is not None:
-            line_count = len(val.splitlines())
+            line_count = len(value.splitlines())
             if line_count > config.challenge.submission_length_limit:
                 raise ValueError(
-                    f"Submission script exceeds the line limit of {config.challenge.submission_length_limit}. "
+                    f"Commit file exceeds the line limit of {config.challenge.submission_length_limit}. "
                     f"Current line count: {line_count}."
                 )
+        return value
 
-        return val
+
+class MinerOutput(BaseModel):
+    commit_files: list[CommitFile] = Field(
+        ...,
+        min_length=2,
+        max_length=2,
+        title="Commit Files",
+        description="Exactly train.py and submissions.py.",
+        examples=[
+            [
+                {
+                    "file_name": "train.py",
+                    "content": (
+                        _training_py
+                        if _training_py
+                        else "import json, sys\njson.dump({}, open(sys.argv[2], 'w'))\n"
+                    ),
+                },
+                {
+                    "file_name": "submissions.py",
+                    "content": (
+                        _submission_py
+                        if _submission_py
+                        else "def detect_vpn(features, model):\n    return False\n"
+                    ),
+                },
+            ]
+        ],
+    )
+
+    @model_validator(mode="after")
+    def _check_required_files(self) -> "MinerOutput":
+        file_names = [commit_file.file_name for commit_file in self.commit_files]
+        if set(file_names) != {"train.py", "submissions.py"}:
+            raise ValueError(
+                "commit_files must contain exactly one train.py and one submissions.py"
+            )
+        return self
+
+    def get_file_content(self, file_name: str) -> str:
+        for commit_file in self.commit_files:
+            if commit_file.file_name == file_name:
+                return commit_file.content
+        raise ValueError(f"Missing required commit file: {file_name}")
 
 
 class ScoringTelemetryResponse(BaseModel):
@@ -126,6 +156,7 @@ class ScoringTelemetryResponse(BaseModel):
 
 __all__ = [
     "MinerInput",
+    "CommitFile",
     "MinerOutput",
     "ScoringTelemetryResponse",
 ]

@@ -59,10 +59,19 @@ Check with web browser:
 
 ### 5. 🧹 Format check before submission
 
-Miner output now contains two scripts:
+Miner output contains exactly two commit files:
 
-- `train_script`: called as `python train.py <training_csv> <model_json>` and must write a model JSON file.
-- `inference_script`: exposes `detect_vpn(features, model)` and returns `True` or `False`.
+```json
+{
+  "commit_files": [
+    {"file_name": "train.py", "content": "..."},
+    {"file_name": "submissions.py", "content": "..."}
+  ]
+}
+```
+
+- `train.py` is called as `python train.py <training_csv> <model_json>`.
+- `submissions.py` exposes `detect_vpn(features, model)`.
 
 Production always passes
 `volumes/storage/flowradar-challenge/data/v2_train_data.csv` to the trainer.

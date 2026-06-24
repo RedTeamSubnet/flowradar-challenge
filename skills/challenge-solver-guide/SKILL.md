@@ -39,7 +39,8 @@ Both locations are mandatory because the score helper submits both files.
 # Architecture Overview
 
 High-level pipeline:
-1. Challenge API `/score` receives `train.py` and `submissions.py`.
+1. Challenge API `/score` receives both files through
+   `miner_output.commit_files`.
 2. API starts an isolated FlowRadar container with both scripts and mandatory
    `v2_train_data.csv` mounted read-only.
 3. `POST /train` runs `train.py` and loads its temporary JSON model.

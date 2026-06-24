@@ -1,9 +1,18 @@
 # Miner v2 Submission Guide
 
-FlowRadar v2 submissions contain:
+FlowRadar v2 submissions use:
 
-- `train_script`
-- `inference_script`
+```json
+{
+  "commit_files": [
+    {"file_name": "train.py", "content": "..."},
+    {"file_name": "submissions.py", "content": "..."}
+  ]
+}
+```
+
+`commit_files` must contain exactly these two files. Duplicate names, missing
+files, additional files, path-based names, and empty content are rejected.
 
 ## Mandatory Training Dataset
 
@@ -88,8 +97,16 @@ See [Testing Manual](./testing-manual.md) for the exact conversion command.
     "random_val": "nonce"
   },
   "miner_output": {
-    "train_script": "import json, sys\n...",
-    "inference_script": "def detect_vpn(features, model):\n    return False\n"
+    "commit_files": [
+      {
+        "file_name": "train.py",
+        "content": "import json, sys\n..."
+      },
+      {
+        "file_name": "submissions.py",
+        "content": "def detect_vpn(features, model):\n    return False\n"
+      }
+    ]
   }
 }
 ```

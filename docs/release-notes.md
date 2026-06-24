@@ -9,7 +9,7 @@ hide:
 ## Unreleased
 
 - FlowRadar v2 submission contract:
-    - miners submit `train_script` and `inference_script`
+    - `miner_output.commit_files` contains exactly `train.py` and `submissions.py`
     - `FLR_CHALLENGE_TRAIN_CSV_PATH` points to mandatory `v2_train_data.csv`
     - `FLR_CHALLENGE_TEST_CSV_PATH` points to production `v2_test_data.csv`
     - training and temporary model loading happen inside the isolated detector container

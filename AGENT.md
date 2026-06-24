@@ -5,7 +5,7 @@ file as the default playbook for coding agents working in the repository.
 
 ## Challenge Contract
 
-Miners submit two Python scripts:
+`miner_output.commit_files` contains exactly:
 
 - `train.py`
   - invoked as `python train.py <training_csv> <model_json>`
@@ -74,7 +74,7 @@ logic to files that are not included in the miner payload.
 
 ## Execution Flow
 
-1. `/score` receives `train_script` and `inference_script`.
+1. `/score` receives `commit_files` containing `train.py` and `submissions.py`.
 2. The challenge starts an isolated FlowRadar container.
 3. Both scripts and `v2_train_data.csv` are mounted read-only.
 4. The challenge calls the container's `POST /train`.

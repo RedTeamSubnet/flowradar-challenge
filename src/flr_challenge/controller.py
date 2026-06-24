@@ -166,10 +166,6 @@ class FLRController(Controller):
     def _exclude_output_keys(self, miner_output: dict, reference_output: dict) -> None:
         miner_output["commit_files"] = None
         reference_output["commit_files"] = None
-        miner_output["train_script"] = None
-        reference_output["train_script"] = None
-        miner_output["inference_script"] = None
-        reference_output["inference_script"] = None
         miner_output["telemetry"] = None
         reference_output["telemetry"] = None
         miner_output["scoring_results"] = None

@@ -74,8 +74,8 @@ def main() -> int:
         return 1
 
     try:
-        train_script = training_file.read_text(encoding="utf-8")
-        inference_script = submission_file.read_text(encoding="utf-8")
+        training_content = training_file.read_text(encoding="utf-8")
+        inference_content = submission_file.read_text(encoding="utf-8")
     except OSError as exc:
         print(f"Failed to read submission files: {exc}", file=sys.stderr)
         return 1
@@ -83,8 +83,13 @@ def main() -> int:
     payload = {
         "miner_input": {"random_val": secrets.token_hex(8)},
         "miner_output": {
-            "train_script": train_script,
-            "inference_script": inference_script,
+            "commit_files": [
+                {"file_name": "train.py", "content": training_content},
+                {
+                    "file_name": "submissions.py",
+                    "content": inference_content,
+                },
+            ],
         },
     }
 

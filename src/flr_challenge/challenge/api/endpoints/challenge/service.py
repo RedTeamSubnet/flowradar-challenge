@@ -55,9 +55,9 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
         training_path = os.path.join(tmp_dir, "train.py")
         submission_path = os.path.join(tmp_dir, "submissions.py")
         with open(training_path, "w", encoding="utf-8", newline="\n") as f:
-            f.write(miner_output.train_script)
+            f.write(miner_output.get_file_content("train.py"))
         with open(submission_path, "w", encoding="utf-8", newline="\n") as f:
-            f.write(miner_output.inference_script)
+            f.write(miner_output.get_file_content("submissions.py"))
         total_file_size += os.path.getsize(training_path)
         total_file_size += os.path.getsize(submission_path)
 

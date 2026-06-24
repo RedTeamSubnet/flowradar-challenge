@@ -38,16 +38,26 @@ The script builds payload using the challenge submission format:
     "random_val": "<random string>"
   },
   "miner_output": {
-    "train_script": "<contents of train.py>",
-    "inference_script": "<contents of submissions.py>"
+    "commit_files": [
+      {
+        "file_name": "train.py",
+        "content": "<contents of train.py>"
+      },
+      {
+        "file_name": "submissions.py",
+        "content": "<contents of submissions.py>"
+      }
+    ]
   }
 }
 ```
 
 `MinerOutput` constraints (from schema):
-- `train_script` is required and called as `python train.py <training_csv> <model_json>`.
-- `inference_script` is required and must expose `detect_vpn(features, model)`.
-- each script must respect the configured submission line limit.
+- `commit_files` must contain exactly one `train.py` and one `submissions.py`.
+- additional files, duplicate names, path-based names, and empty content are rejected.
+- `train.py` is called as `python train.py <training_csv> <model_json>`.
+- `submissions.py` must expose `detect_vpn(features, model)`.
+- each file must respect the configured submission line limit.
 
 Expected `/score` behavior:
 - endpoint trains with mandatory `v2_train_data.csv`.

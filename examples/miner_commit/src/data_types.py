@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class MinerInput(BaseModel):
@@ -12,31 +12,52 @@ class MinerInput(BaseModel):
     )
 
 
-class MinerOutput(BaseModel):
-    train_script: str = Field(
+class CommitFile(BaseModel):
+    file_name: str = Field(
         ...,
-        title="Training Script",
-        description="Script called as `python train.py <training_csv> <model_json>`.",
+        min_length=1,
+        max_length=128,
+        title="File Name",
     )
-    inference_script: str = Field(
+    content: str = Field(
         ...,
-        title="Inference Script",
-        description="Script exposing `detect_vpn(features, model)`.",
+        min_length=1,
+        title="File Content",
     )
 
-    @field_validator("train_script", "inference_script", mode="after")
+    @field_validator("file_name", mode="after")
     @classmethod
-    def _check_scripts(cls, val: str) -> str:
-        _content_lines = val.splitlines()
+    def _check_file_name(cls, value: str) -> str:
+        if value not in {"train.py", "submissions.py"}:
+            raise ValueError("file_name must be 'train.py' or 'submissions.py'")
+        return value
+
+    @field_validator("content", mode="after")
+    @classmethod
+    def _check_content(cls, value: str) -> str:
+        _content_lines = value.splitlines()
         if len(_content_lines) > 1000:
             raise ValueError(
-                "Commit script contains too many lines, should be <= 1000 lines!"
+                "Commit file contains too many lines, should be <= 1000 lines!"
             )
+        return value
 
-        return val
+
+class MinerOutput(BaseModel):
+    commit_files: list[CommitFile] = Field(..., min_length=2, max_length=2)
+
+    @model_validator(mode="after")
+    def _check_required_files(self) -> "MinerOutput":
+        file_names = [commit_file.file_name for commit_file in self.commit_files]
+        if set(file_names) != {"train.py", "submissions.py"}:
+            raise ValueError(
+                "commit_files must contain exactly one train.py and one submissions.py"
+            )
+        return self
 
 
 __all__ = [
     "MinerInput",
+    "CommitFile",
     "MinerOutput",
 ]

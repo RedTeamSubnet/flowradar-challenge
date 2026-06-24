@@ -4,6 +4,9 @@ Use these files first when solving this challenge.
 
 ## Submission entry points
 
+Both files are submitted in `miner_output.commit_files` using `file_name` and
+`content`.
+
 - `src/flr_challenge/challenge/flowradar/src/train.py`
   - receives mandatory v2 training CSV as `sys.argv[1]`.
   - writes model JSON to `sys.argv[2]`.

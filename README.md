@@ -10,29 +10,42 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
 - Challenge module (Python package)
 - Challenge controller and manager
 - Challenge API (FastAPI)
-- FlowRadar v2 two-stage submission flow:
-    - miner training script receives the mandatory `v2_train_data.csv`
-    - miner inference script receives each `v2_test_data.csv` row plus the trained model
+- FlowRadar v2 submission flow:
+    - `miner_output.commit_files` contains `train.py` and `submissions.py`
+    - `train.py` receives the mandatory `v2_train_data.csv`
+    - `submissions.py` receives each `v2_test_data.csv` row plus the trained model
 
 ---
 
 ## FlowRadar v2 Challenge Flow
 
-Miners submit two Python scripts:
+Miners submit two Python files:
 
-1. `train_script`
+1. `train.py`
     - Called as `python train.py <training_csv> <model_json>`.
     - Receives `v2_train_data.csv`; miners cannot select or replace this dataset.
     - Must write a valid JSON model file.
-2. `inference_script`
+2. `submissions.py`
     - Exposes `detect_vpn(features, model) -> bool`.
     - Runs inside the FlowRadar detector container.
     - Receives one row from `v2_test_data.csv` at a time and the JSON model produced by training.
 
-The challenge API mounts `v2_train_data.csv` and the submitted scripts into the
+The challenge API reads both files from `miner_output.commit_files` and mounts
+them with `v2_train_data.csv` into the
 isolated FlowRadar container. The container trains the model, keeps the model
 temporary for that scoring run, and serves inference while the challenge
 replays `v2_test_data.csv`.
+
+```json
+{
+  "miner_output": {
+    "commit_files": [
+      {"file_name": "train.py", "content": "..."},
+      {"file_name": "submissions.py", "content": "..."}
+    ]
+  }
+}
+```
 
 ## 🐤 Getting Started
 
