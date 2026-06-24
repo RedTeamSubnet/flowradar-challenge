@@ -1,6 +1,6 @@
 services:
   miner-api:
-    image: redteamsubnet61/flowradar-submission_template:latest
+    image: redteamsubnet61/flowradar-submission_template:2.0.0
     build:
       context: .
     restart: unless-stopped

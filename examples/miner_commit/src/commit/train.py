@@ -18,6 +18,7 @@ def _to_float(value):
 def main():
     train_csv = sys.argv[1]
     model_json = sys.argv[2]
+
     vpn_ratio_total = 0.0
     clean_ratio_total = 0.0
     vpn_count = 0
@@ -35,15 +36,16 @@ def main():
                 clean_ratio_total += ratio
                 clean_count += 1
 
+    vpn_mean = vpn_ratio_total / max(1, vpn_count)
+    clean_mean = clean_ratio_total / max(1, clean_count)
     model = {
-        "ratio_threshold": (
-            vpn_ratio_total / max(1, vpn_count)
-            + clean_ratio_total / max(1, clean_count)
-        )
-        / 2.0
+        "version": 1,
+        "ratio_threshold": (vpn_mean + clean_mean) / 2.0,
+        "vpn_count": vpn_count,
+        "clean_count": clean_count,
     }
     with open(model_json, "w", encoding="utf-8") as model_file:
-        json.dump(model, model_file)
+        json.dump(model, model_file, separators=(",", ":"))
 
 
 if __name__ == "__main__":

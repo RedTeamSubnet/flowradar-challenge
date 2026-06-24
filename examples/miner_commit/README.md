@@ -64,6 +64,16 @@ Miner output now contains two scripts:
 - `train_script`: called as `python train.py <training_csv> <model_json>` and must write a model JSON file.
 - `inference_script`: exposes `detect_vpn(features, model)` and returns `True` or `False`.
 
+Production always passes
+`volumes/storage/flowradar-challenge/data/v2_train_data.csv` to the trainer.
+Miners cannot choose a different training dataset. The label column is
+`vpn_is_enabled`. Run `git lfs pull` if the dataset was not downloaded with the
+repository.
+
+The v1 datasets are only for optional compatibility testing. Keep training on
+v2, rename the v1 test label from `is_vpn` to `vpn_is_enabled`, and reindex the
+v1 test data to the v2 columns before scoring it.
+
 After finishing development, miners must check formatting for their submission files using Ruff:
 
 ```sh
