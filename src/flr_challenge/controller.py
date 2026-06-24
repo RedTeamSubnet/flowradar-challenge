@@ -65,11 +65,11 @@ class FLRController(Controller):
         )
 
         _scoring_log.score = score
-        _payload, _feedback = self._get_results_from_challenge()
+        _, _feedback = self._get_results_from_challenge()
         _scoring_log.miner_output["scoring_results"] = _feedback
-        self._save_result_to_data_folder(
-            result_payload=_payload, docker_hub_id=miner_commit.docker_hub_id
-        )
+        # self._save_result_to_data_folder(
+        #     result_payload=_payload, docker_hub_id=miner_commit.docker_hub_id
+        # )
         _scoring_log.miner_output["telemetry"] = self._get_telemetry_from_challenge()
         return
 

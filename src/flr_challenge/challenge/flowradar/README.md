@@ -4,20 +4,45 @@ Fingerprint-based VPN detection API using network flow features.
 
 ## Overview
 
-This project provides an API that processes network flow data to detect if the traffic is coming from a VPN. It analyzes packet length ratios, packet rates, and other network features.
+This project provides the isolated detector and training container used by the
+FlowRadar v2 scoring API. Miners submit one training script and one inference
+script. Training runs inside this container against the mandatory
+`v2_train_data.csv`.
 
 ## Architecture
 
-- **Detection Logic**: Heuristic-based VPN detection
+- **Training Logic**: `train.py` receives the training CSV and writes model JSON
+- **Detection Logic**: `submissions.py` exposes `detect_vpn(features, model)`
+- **Model Loading**: `POST /train` loads the generated `/tmp/model.json`
 - **API**: FastAPI for serving VPN detection requests
 
 ## Key Components
 
 | File             | Description                       |
 | ---------------- | --------------------------------- |
-| `submissions.py` | VPN detection logic (heuristics)  |
+| `train.py`       | Training script that writes a model JSON |
+| `submissions.py` | VPN detection logic exposing `detect_vpn(features, model)` |
 | `app.py`         | FastAPI application and endpoints |
 | `data_types.py`  | Pydantic models for input/output  |
+
+## Miner Contract
+
+Training is called as:
+
+```sh
+python train.py /path/to/v2_train_data.csv /tmp/model.json
+```
+
+The inference script must define:
+
+```python
+def detect_vpn(features: dict, model: dict) -> bool:
+    ...
+```
+
+The challenge enforces `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`, defaulting to
+`600` seconds. The generated model JSON remains temporary inside this container
+for the current scoring run.
 
 ## API Endpoints
 
@@ -25,9 +50,14 @@ This project provides an API that processes network flow data to detect if the t
 
 Health check endpoint.
 
-### POST /fingerprint
+### POST /train
 
-Detect if traffic is VPN based on network flow features.
+Run the mounted training script inside the container, validate its model JSON,
+and load that model for detection.
+
+### POST /vpn_detector
+
+Detect if traffic is VPN based on network flow features and the trained model.
 
 **Request:**
 

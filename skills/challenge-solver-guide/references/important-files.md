@@ -2,30 +2,36 @@
 
 Use these files first when solving this challenge.
 
-## Submission entry point (your code)
+## Submission entry points
 
+Both files are submitted in `miner_output.commit_files` using `file_name` and
+`content`.
+
+- `src/flr_challenge/challenge/flowradar/src/train.py`
+  - receives mandatory v2 training CSV as `sys.argv[1]`.
+  - writes model JSON to `sys.argv[2]`.
 - `src/flr_challenge/challenge/flowradar/src/submissions.py`
-  - contains `detect_vpn(features)` used for every replayed row.
-  - all solver logic should stay here for submission/scoring compatibility.
+  - contains `detect_vpn(features, model)` used for every replayed row.
 
 ## Runtime and API flow
 
 - `src/flr_challenge/challenge/flowradar/src/app.py`
+  - `/train` executes the mounted trainer inside the isolated container.
   - `/vpn_detector` request flow.
-  - passes `products` payload into `detect_vpn`.
+  - passes `products` and parsed model into `detect_vpn`.
 - `src/flr_challenge/challenge/flowradar/src/data_types.py`
   - request/response schema for detector service.
 
 ## Scoring and dataset behavior
 
 - `src/flr_challenge/challenge/api/endpoints/challenge/service.py`
-  - runs your submission in a container, replays dataset rows, tracks misses/timeouts, computes final score.
+  - starts the isolated container, calls `/train`, replays v2 test rows, and computes final score.
 - `src/flr_challenge/challenge/api/endpoints/challenge/payload_managers.py`
   - score composition and counters:
     - true/false positives/negatives
     - precision, recall, F1 (final score)
 - `src/flr_challenge/challenge/api/core/configs/_challenge.py`
-  - challenge config: request timeout, acceptable misses, dataset path template, submission limits.
+  - challenge config: v2 train/test paths, timeouts, model size, and submission limits.
 
 ## Local operations
 
@@ -38,5 +44,9 @@ Use these files first when solving this challenge.
 
 ## Dataset location
 
-- `volumes/storage/flowradar-challenge/data/metrics.csv`
-  - local replay dataset used by scoring service.
+- `volumes/storage/flowradar-challenge/data/v2_train_data.csv`
+  - mandatory production training dataset.
+- `volumes/storage/flowradar-challenge/data/v2_test_data.csv`
+  - production replay dataset used by the scoring service.
+- `volumes/storage/flowradar-challenge/data/v1_test_data.csv`
+  - optional compatibility data; adapt its label and shape before scoring.

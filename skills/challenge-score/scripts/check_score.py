@@ -31,27 +31,71 @@ def main() -> int:
         print("FLR_CHALLENGE_API_KEY is not set", file=sys.stderr)
         return 1
 
-    submission_file = (
-        root_dir / "src/flr_challenge/challenge/flowradar/src/submissions.py"
+    train_csv = os.environ.get(
+        "FLR_CHALLENGE_TRAIN_CSV_PATH", "{data_dir}/v2_train_data.csv"
     )
+    test_csv = os.environ.get(
+        "FLR_CHALLENGE_TEST_CSV_PATH", "{data_dir}/v2_test_data.csv"
+    )
+    if Path(train_csv).name != "v2_train_data.csv":
+        print(
+            "FLR_CHALLENGE_TRAIN_CSV_PATH must point to v2_train_data.csv",
+            file=sys.stderr,
+        )
+        return 1
+    if Path(test_csv).name != "v2_test_data.csv":
+        print(
+            "Warning: test data is not v2_test_data.csv; "
+            "this is not production-equivalent.",
+            file=sys.stderr,
+        )
 
+    local_train_csv = (
+        root_dir
+        / "volumes/storage/flowradar-challenge/data/v2_train_data.csv"
+    )
+    if not local_train_csv.exists() or local_train_csv.stat().st_size < 1_000_000:
+        print(
+            "v2_train_data.csv is missing or is still an LFS pointer; "
+            "run `git lfs pull`",
+            file=sys.stderr,
+        )
+        return 1
+
+    flowradar_src = root_dir / "src/flr_challenge/challenge/flowradar/src"
+    training_file = flowradar_src / "train.py"
+    submission_file = flowradar_src / "submissions.py"
+
+    if not training_file.exists():
+        print(f"Missing training file: {training_file}", file=sys.stderr)
+        return 1
     if not submission_file.exists():
         print(f"Missing submission file: {submission_file}", file=sys.stderr)
         return 1
 
     try:
-        commit_files = submission_file.read_text(encoding="utf-8")
+        training_content = training_file.read_text(encoding="utf-8")
+        inference_content = submission_file.read_text(encoding="utf-8")
     except OSError as exc:
-        print(f"Failed to read submission file: {exc}", file=sys.stderr)
+        print(f"Failed to read submission files: {exc}", file=sys.stderr)
         return 1
 
     payload = {
         "miner_input": {"random_val": secrets.token_hex(8)},
-        "miner_output": {"commit_files": commit_files},
+        "miner_output": {
+            "commit_files": [
+                {"file_name": "train.py", "content": training_content},
+                {
+                    "file_name": "submissions.py",
+                    "content": inference_content,
+                },
+            ],
+        },
     }
 
+    port = os.environ.get("FLR_API_PORT", "10001")
     req = request.Request(
-        "http://localhost:10001/score",
+        f"http://localhost:{port}/score",
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
@@ -61,7 +105,10 @@ def main() -> int:
     )
 
     try:
-        with request.urlopen(req, timeout=60) as resp:
+        training_timeout = float(
+            os.environ.get("FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS", "600")
+        )
+        with request.urlopen(req, timeout=training_timeout + 300) as resp:
             raw = resp.read().decode("utf-8")
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")

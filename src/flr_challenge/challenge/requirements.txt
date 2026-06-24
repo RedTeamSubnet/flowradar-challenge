@@ -6,3 +6,5 @@ fastapi[all]~=0.135.1
 pandas~=2.2.0
 requests~=2.31.0
 docker~=7.1.0
+numpy>=1.26.0,<3.0.0
+scikit-learn>=1.4.0,<2.0.0

@@ -3,7 +3,7 @@ import logging
 import pathlib
 
 from fastapi import FastAPI, Body, HTTPException
-from data_types import MinerInput, MinerOutput
+from data_types import CommitFile, MinerInput, MinerOutput
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -29,12 +29,21 @@ def solve(miner_input: MinerInput = Body(...)) -> MinerOutput:
     _miner_output: MinerOutput
     try:
         _src_dir = pathlib.Path(__file__).parent.resolve()
-        _commit_dir = _src_dir / "commit" / "submissions.py"
-        _commit_file_pm = ""
-        with open(_commit_dir) as _commit_file:
-            _commit_file_pm = _commit_file.read()
+        _commit_dir = _src_dir / "commit"
+        with open(_commit_dir / "train.py") as _training_file:
+            _training_content = _training_file.read()
+        with open(_commit_dir / "submissions.py") as _submission_file:
+            _inference_content = _submission_file.read()
 
-        _miner_output = MinerOutput(commit_files=_commit_file_pm)
+        _miner_output = MinerOutput(
+            commit_files=[
+                CommitFile(file_name="train.py", content=_training_content),
+                CommitFile(
+                    file_name="submissions.py",
+                    content=_inference_content,
+                ),
+            ]
+        )
         logger.info("Successfully retrieved commit files.")
     except Exception as err:
         logger.error(f"Failed to retrieve commit files: {str(err)}")

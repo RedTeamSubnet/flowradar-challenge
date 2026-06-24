@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from typing import Any
 
 import pandas as pd
 import requests
@@ -23,8 +24,20 @@ def get_task() -> MinerInput:
     return MinerInput()
 
 
+def _json_safe_value(value: Any) -> Any:
+    """Convert pandas/numpy missing scalars to valid JSON values."""
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+
+    item = getattr(value, "item", None)
+    return item() if callable(item) else value
+
+
 @validate_call
-def score(request_id: str, miner_output: MinerOutput) -> None:
+def score(request_id: str, miner_output: MinerOutput) -> float:
     if scoring_status_manager.get_scoring_status() == ScoringStatus.SCORING:
         raise RuntimeError("Scoring is already in progress")
     runtime_seconds = 0.0
@@ -39,19 +52,31 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 
-        file_path = os.path.join(tmp_dir, "submission.py")
-        with open(file_path, "w") as f:
-            f.write(miner_output.commit_files)
-        total_file_size += os.path.getsize(file_path)
+        training_path = os.path.join(tmp_dir, "train.py")
+        submission_path = os.path.join(tmp_dir, "submissions.py")
+        with open(training_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(miner_output.get_file_content("train.py"))
+        with open(submission_path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(miner_output.get_file_content("submissions.py"))
+        total_file_size += os.path.getsize(training_path)
+        total_file_size += os.path.getsize(submission_path)
 
         logger.info(
             f"[{request_id}] - Total submission file size: {total_file_size} bytes"
         )
 
         try:
+            total_runtime_start = time.perf_counter()
+            training_start = time.perf_counter()
+            logger.info(
+                f"[{request_id}] - Starting model training with timeout "
+                f"{config.challenge.training_timeout_seconds}s"
+            )
             container, ip_address = _utils.run_flowradar_container(
                 request_id=request_id,
-                file_path=file_path,
+                file_path=submission_path,
+                training_path=training_path,
+                training_csv_path=config.challenge.train_csv_path,
                 flowradar_port=config.challenge.flowradar_port,
             )
             _utils.start_log_streaming_thread(container)
@@ -65,25 +90,52 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             logger.info(f"[{request_id}] - Detector container is healthy")
 
             base_url = f"http://{ip_address}:{config.challenge.flowradar_port}"
-            df = pd.read_csv(config.challenge.metrics_csv_path)
+            training_response = requests.post(
+                f"{base_url}/train",
+                timeout=config.challenge.training_timeout_seconds + 10,
+            )
+            training_response.raise_for_status()
+            training_result = training_response.json()
+            training_seconds = time.perf_counter() - training_start
+            model_size = int(training_result["model_size_bytes"])
+            if (
+                training_result.get("status") != "trained"
+                or model_size < 1
+                or model_size > config.challenge.model_json_size_limit
+            ):
+                raise ValueError("Detector returned an invalid training result")
+            total_file_size += model_size
+            logger.info(
+                f"[{request_id}] - Training completed in {training_seconds:.3f}s; "
+                f"model size={model_size} bytes"
+            )
+
+            df = pd.read_csv(config.challenge.test_csv_path)
             runtime_start = time.perf_counter()
 
-            # Save ground truth before dropping the column
-            ground_truth = None
-            if "is_vpn" in df.columns:
-                ground_truth = df["is_vpn"].copy()
-                df = df.drop(columns=["is_vpn"])
+            label_column = next(
+                (
+                    column
+                    for column in ("vpn_is_enabled", "is_vpn")
+                    if column in df.columns
+                ),
+                None,
+            )
+            if label_column is None:
+                raise ValueError(
+                    "Scoring CSV must contain 'vpn_is_enabled' or 'is_vpn'"
+                )
+            ground_truth = df.pop(label_column)
+
             _request_session = requests.Session()
             logger.info(
                 f"[{request_id}] - Starting fingerprinting process for {len(df)} rows"
             )
             for index, row in df.iterrows():
-                row_data = row.to_dict()
-                expected_is_vpn = None
-
-                # Use the saved ground truth for scoring
-                if ground_truth is not None:
-                    expected_is_vpn = ground_truth[index]
+                row_data = {
+                    column: _json_safe_value(value) for column, value in row.items()
+                }
+                expected_is_vpn = ground_truth.loc[index]
 
                 try:
 
@@ -123,10 +175,12 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
                     )
                     break
             _request_session.close()
-            runtime_seconds = time.perf_counter() - runtime_start
+            fingerprint_seconds = time.perf_counter() - runtime_start
+            runtime_seconds = time.perf_counter() - total_runtime_start
 
             logger.info(
-                f"[{request_id}] - Fingerprinting completed. Stored {payload_manager.payload_count()} fingerprints."
+                f"[{request_id}] - Fingerprinting completed in {fingerprint_seconds:.3f}s. "
+                f"Stored {payload_manager.payload_count()} fingerprints."
             )
 
             final_score = payload_manager.calculate_score()
@@ -148,7 +202,7 @@ def score(request_id: str, miner_output: MinerOutput) -> None:
             )
 
             if container:
-                # _utils.cleanup_container(container)
+                _utils.cleanup_container(container)
                 logger.info(f"[{request_id}] - Detector container cleaned up")
             scoring_status_manager.set_scoring_status(ScoringStatus.AVAILABLE)
 

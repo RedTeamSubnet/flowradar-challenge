@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from potato_util.generator import gen_random_string
 
@@ -11,14 +11,19 @@ from api.logger import logger
 
 api_dir = os.environ.get("FLR_API_DIR", "/app/flowradar-challenge")
 _submission_path = Path(os.path.join(api_dir, "flowradar", "src", "submissions.py"))
+_training_path = Path(os.path.join(api_dir, "flowradar", "src", "train.py"))
 _submission_py = ""
+_training_py = ""
 try:
     if _submission_path.exists():
         with open(_submission_path) as _submission_file:
             _submission_py = _submission_file.read()
+    if _training_path.exists():
+        with open(_training_path) as _training_file:
+            _training_py = _training_file.read()
 
 except Exception:
-    logger.exception("Failed to read submission file!")
+    logger.exception("Failed to read example submission files!")
 
 
 class MinerInput(BaseModel):
@@ -30,38 +35,84 @@ class MinerInput(BaseModel):
     )
 
 
-class MinerOutput(BaseModel):
-    commit_files: str = Field(
+class CommitFile(BaseModel):
+    file_name: str = Field(
         ...,
-        title="Submission Python File",
-        description="The content of the submission Python file as a string.",
+        min_length=1,
+        max_length=128,
+        title="File Name",
+        description="Submission file name. Must be train.py or submissions.py.",
+    )
+    content: str = Field(
+        ...,
+        min_length=1,
+        title="File Content",
+        description="Complete Python source for this submission file.",
+    )
+
+    @field_validator("file_name", mode="after")
+    @classmethod
+    def _check_file_name(cls, value: str) -> str:
+        if value not in {"train.py", "submissions.py"}:
+            raise ValueError("file_name must be 'train.py' or 'submissions.py'")
+        return value
+
+    @field_validator("content", mode="after")
+    @classmethod
+    def _check_content(cls, value: str) -> str:
+        if config.challenge.submission_length_limit is not None:
+            line_count = len(value.splitlines())
+            if line_count > config.challenge.submission_length_limit:
+                raise ValueError(
+                    f"Commit file exceeds the line limit of {config.challenge.submission_length_limit}. "
+                    f"Current line count: {line_count}."
+                )
+        return value
+
+
+class MinerOutput(BaseModel):
+    commit_files: list[CommitFile] = Field(
+        ...,
+        min_length=2,
+        max_length=2,
+        title="Commit Files",
+        description="Exactly train.py and submissions.py.",
         examples=[
-            (
-                _submission_py
-                if _submission_py
-                else "def solution():\n    return 'Hello, FlowRadar Challenge!'"
-            )
+            [
+                {
+                    "file_name": "train.py",
+                    "content": (
+                        _training_py
+                        if _training_py
+                        else "import json, sys\njson.dump({}, open(sys.argv[2], 'w'))\n"
+                    ),
+                },
+                {
+                    "file_name": "submissions.py",
+                    "content": (
+                        _submission_py
+                        if _submission_py
+                        else "def detect_vpn(features, model):\n    return False\n"
+                    ),
+                },
+            ]
         ],
     )
 
-    @field_validator("commit_files", mode="after")
-    @classmethod
-    def _check_submission_py(cls, val: str) -> str:
-        """
-        Validate the submission Python file based on the challenge configuration.
-            - The file should not exceed the line limit.
-            - Each file should not exceed the line limit.
-            - Each file should have a valid name and extension.
-        """
-        if config.challenge.submission_length_limit is not None:
-            line_count = len(val.splitlines())
-            if line_count > config.challenge.submission_length_limit:
-                raise ValueError(
-                    f"Submission file exceeds the line limit of {config.challenge.submission_length_limit}. "
-                    f"Current line count: {line_count}."
-                )
+    @model_validator(mode="after")
+    def _check_required_files(self) -> "MinerOutput":
+        file_names = [commit_file.file_name for commit_file in self.commit_files]
+        if set(file_names) != {"train.py", "submissions.py"}:
+            raise ValueError(
+                "commit_files must contain exactly one train.py and one submissions.py"
+            )
+        return self
 
-        return val
+    def get_file_content(self, file_name: str) -> str:
+        for commit_file in self.commit_files:
+            if commit_file.file_name == file_name:
+                return commit_file.content
+        raise ValueError(f"Missing required commit file: {file_name}")
 
 
 class ScoringTelemetryResponse(BaseModel):
@@ -105,7 +156,7 @@ class ScoringTelemetryResponse(BaseModel):
 
 __all__ = [
     "MinerInput",
-    "CommitFilePM",
+    "CommitFile",
     "MinerOutput",
     "ScoringTelemetryResponse",
 ]

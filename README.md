@@ -1,6 +1,8 @@
 # FlowRadar: VPN Detection
 
-This is a RedTeam Subnet's flowradar: vpn detection repository.
+![FlowRadar v2 poster](docs/assets/images/poster.png)
+
+This is a RedTeam Subnet FlowRadar VPN detection challenge repository.
 
 Documentation page: <https://docs.theredteam.io/latest/challenges>
 
@@ -10,8 +12,42 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
 - Challenge module (Python package)
 - Challenge controller and manager
 - Challenge API (FastAPI)
+- FlowRadar v2 submission flow:
+    - `miner_output.commit_files` contains `train.py` and `submissions.py`
+    - `train.py` receives the mandatory `v2_train_data.csv`
+    - `submissions.py` receives each `v2_test_data.csv` row plus the trained model
 
 ---
+
+## FlowRadar v2 Challenge Flow
+
+Miners submit two Python files:
+
+1. `train.py`
+    - Called as `python train.py <training_csv> <model_json>`.
+    - Receives `v2_train_data.csv`; miners cannot select or replace this dataset.
+    - Must write a valid JSON model file.
+2. `submissions.py`
+    - Exposes `detect_vpn(features, model) -> bool`.
+    - Runs inside the FlowRadar detector container.
+    - Receives one row from `v2_test_data.csv` at a time and the JSON model produced by training.
+
+The challenge API reads both files from `miner_output.commit_files` and mounts
+them with `v2_train_data.csv` into the
+isolated FlowRadar container. The container trains the model, keeps the model
+temporary for that scoring run, and serves inference while the challenge
+replays `v2_test_data.csv`.
+
+```json
+{
+  "miner_output": {
+    "commit_files": [
+      {"file_name": "train.py", "content": "..."},
+      {"file_name": "submissions.py", "content": "..."}
+    ]
+  }
+}
+```
 
 ## 🐤 Getting Started
 
@@ -27,6 +63,7 @@ Documentation page: <https://docs.theredteam.io/latest/challenges>
     - _[arm64/aarch64] [Miniforge (v3)](https://github.com/conda-forge/miniforge)_
     - _[Python virtual environment] [venv](https://docs.python.org/3/library/venv.html)_
 - Install [**git**](https://git-scm.com/downloads)
+- Install [**Git LFS**](https://git-lfs.com/) for `v2_train_data.csv`
 - Setup an [**SSH key**](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh)
 
 ### 2. 📥 Download or clone the repository
@@ -47,14 +84,16 @@ cd ~/workspaces/projects
 
 ```sh
 git clone https://github.com/RedTeamSubnet/flowradar_v1.git && \
-    cd flowradar_v1
+    cd flowradar_v1 && \
+    git lfs pull
 ```
 
 **OPTION B.** Clone the repository (for **DEVELOPMENT**: git + ssh key):
 
 ```sh
 git clone git@github.com:RedTeamSubnet/flowradar_v1.git && \
-    cd flowradar_v1
+    cd flowradar_v1 && \
+    git lfs pull
 ```
 
 **OPTION C.** Download source code:
@@ -154,6 +193,9 @@ FLR_API_PORT=10001
 # FLR_API_CONFIGS_DIR="/etc/flowradar-challenge"
 # FLR_API_LOGS_DIR="/var/log/flowradar-challenge"
 # FLR_API_DATA_DIR="/var/lib/flowradar-challenge"
+# FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"
+# FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"
+# FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS=600
 # FLR_API_TMP_DIR="/tmp/flowradar-challenge"
 # FLR_API_VERSION="1"
 # FLR_API_PREFIX=""
@@ -181,6 +223,9 @@ docker compose build
 ## 📚 Documentation
 
 - <https://docs.theredteam.io/latest/challenges>
+- [Docs index](./docs/README.md)
+- [Testing manual](./docs/testing-manual.md)
+- [Miner v2 submission guide](./docs/miner-v2-submission.md)
 
 ---
 

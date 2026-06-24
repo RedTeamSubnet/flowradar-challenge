@@ -59,10 +59,35 @@ Check with web browser:
 
 ### 5. 🧹 Format check before submission
 
-After finishing development, miners must check formatting for their submission file using Ruff:
+Miner output contains exactly two commit files:
+
+```json
+{
+  "commit_files": [
+    {"file_name": "train.py", "content": "..."},
+    {"file_name": "submissions.py", "content": "..."}
+  ]
+}
+```
+
+- `train.py` is called as `python train.py <training_csv> <model_json>`.
+- `submissions.py` exposes `detect_vpn(features, model)`.
+
+Production always passes
+`volumes/storage/flowradar-challenge/data/v2_train_data.csv` to the trainer.
+Miners cannot choose a different training dataset. The label column is
+`vpn_is_enabled`. Run `git lfs pull` if the dataset was not downloaded with the
+repository.
+
+The v1 datasets are only for optional compatibility testing. Keep training on
+v2, rename the v1 test label from `is_vpn` to `vpn_is_enabled`, and reindex the
+v1 test data to the v2 columns before scoring it.
+
+After finishing development, miners must check formatting for their submission files using Ruff:
 
 ```sh
 ruff --config volumes/configs/.ruff.toml --check src/flr_challenge/challenge/flowradar/src/submissions.py
+ruff --config volumes/configs/.ruff.toml --check src/flr_challenge/challenge/flowradar/src/train.py
 ```
 
 > [!CAUTION]

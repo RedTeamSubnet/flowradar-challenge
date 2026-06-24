@@ -1,16 +1,23 @@
 ---
 title: "Release Notes"
 hide:
-  - navigation
+    - navigation
 ---
 
 # 📌 Release Notes
 
+## Unreleased
+
+- FlowRadar v2 submission contract:
+    - `miner_output.commit_files` contains exactly `train.py` and `submissions.py`
+    - `FLR_CHALLENGE_TRAIN_CSV_PATH` points to mandatory `v2_train_data.csv`
+    - `FLR_CHALLENGE_TEST_CSV_PATH` points to production `v2_test_data.csv`
+    - training and temporary model loading happen inside the isolated detector container
+    - v1 data is available only for optional compatibility testing after adapting it to the v2 schema
+
 ## v1.1.1 (2026-05-20)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
-
-
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v1.1.0...v1.1.1
 
@@ -18,15 +25,11 @@ hide:
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
-
-
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v1.0.3...v1.1.0
 
 ## v1.0.3 (2026-05-03)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
-
-
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v1.0.2...v1.0.3
 
@@ -34,15 +37,11 @@ hide:
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
-
-
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v1.0.1...v1.0.2
 
 ## v1.0.1 (2026-04-26)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
-
-
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v1.0.0...v1.0.1
 
@@ -50,15 +49,11 @@ hide:
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
-
-
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v0.0.4...v1.0.0
 
 ## v0.0.4 (2026-04-24)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
-
-
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v0.0.3...v0.0.4
 
@@ -67,11 +62,14 @@ hide:
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
 ## What's Changed
+
 ### 💬 Other
-* build(deps-dev): update setuptools-scm requirement from <10.0.0,>=8.0.4 to >=8.0.4,<11.0.0 by @dependabot[bot] in https://github.com/RedTeamSubnet/flowradar-challenge/pull/1
+
+- build(deps-dev): update setuptools-scm requirement from <10.0.0,>=8.0.4 to >=8.0.4,<11.0.0 by @dependabot[bot] in https://github.com/RedTeamSubnet/flowradar-challenge/pull/1
 
 ## New Contributors
-* @dependabot[bot] made their first contribution in https://github.com/RedTeamSubnet/flowradar-challenge/pull/1
+
+- @dependabot[bot] made their first contribution in https://github.com/RedTeamSubnet/flowradar-challenge/pull/1
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v0.0.2...v0.0.3
 
@@ -79,14 +77,10 @@ hide:
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
 
-
-
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/v0.0.1...v0.0.2
 
 ## v0.0.1 (2026-04-21)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
-
-
 
 **Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/commits/v0.0.1

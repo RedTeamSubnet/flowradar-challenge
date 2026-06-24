@@ -60,8 +60,15 @@ def _ensure_image(client: docker.DockerClient) -> None:
 
 
 def run_flowradar_container(
-    request_id: str, file_path: str, flowradar_port: int = 8000
+    request_id: str,
+    file_path: str,
+    training_path: str,
+    training_csv_path: str,
+    flowradar_port: int = 8000,
 ) -> tuple[docker.models.containers.Container, str]:
+    if not os.path.isfile(training_csv_path):
+        raise FileNotFoundError(f"Training CSV not found: {training_csv_path}")
+
     client = docker.from_env()
     ensure_network_exists()
     _ensure_image(client)
@@ -70,15 +77,32 @@ def run_flowradar_container(
 
     volumes = {}
 
-    target_path = f"/app/submissions.py"
-    volumes[file_path] = {"bind": target_path, "mode": "ro"}
+    volumes[file_path] = {"bind": "/app/submissions.py", "mode": "ro"}
+    volumes[training_path] = {"bind": "/app/train.py", "mode": "ro"}
+    volumes[training_csv_path] = {"bind": "/data/training.csv", "mode": "ro"}
+    environment = {
+        "PORT": str(flowradar_port),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "FLOWRADAR_TRAINING_PATH": "/app/train.py",
+        "FLOWRADAR_TRAINING_CSV_PATH": "/data/training.csv",
+        "FLOWRADAR_MODEL_PATH": "/tmp/model.json",
+        "FLOWRADAR_TRAINING_TIMEOUT_SECONDS": str(
+            config.challenge.training_timeout_seconds
+        ),
+        "FLOWRADAR_MODEL_JSON_SIZE_LIMIT": str(config.challenge.model_json_size_limit),
+    }
+
     container = client.containers.run(
         config.challenge.fp_container.image,
         detach=True,
         network=config.challenge.fp_container.network_name,
-        environment={"PORT": str(flowradar_port)},
+        environment=environment,
         volumes=volumes,
         name=container_name,
+        read_only=True,
+        tmpfs={"/tmp": "rw,noexec,nosuid,size=64m"},
+        cap_drop=["ALL"],
+        security_opt=["no-new-privileges:true"],
     )
     time.sleep(3)
 
