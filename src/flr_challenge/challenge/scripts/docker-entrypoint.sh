@@ -79,6 +79,12 @@ main()
 		\) -prune -o -type d -exec \
 			chmod ug+s {} + || exit 2
 
+	find "${FLR_API_DATA_DIR}" -type d -exec chmod 771 {} + || exit 2
+	find "${FLR_API_DATA_DIR}" -type f \( \
+			-name "v2_train_data.csv" -o \
+			-name "v2_test_data.csv" \
+		\) -exec chmod 664 {} + || exit 2
+
 	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type d -exec chmod 775 {} + || exit 2
 	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type f -exec chmod 664 {} + || exit 2
 	find "${FLR_API_LOGS_DIR}" "${FLR_API_TMP_DIR}" -type d -exec chmod +s {} + || exit 2
