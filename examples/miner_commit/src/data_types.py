@@ -44,7 +44,15 @@ class CommitFile(BaseModel):
 
 
 class MinerOutput(BaseModel):
-    commit_files: list[CommitFile] = Field(..., min_length=2, max_length=2)
+    commit_files: list[CommitFile] = Field(
+        ...,
+        min_length=2,
+        max_length=2,
+        description=(
+            "Exactly train.py and submissions.py. Learned weights must be generated "
+            "during the current run and must not be embedded in either file."
+        ),
+    )
 
     @model_validator(mode="after")
     def _check_required_files(self) -> "MinerOutput":

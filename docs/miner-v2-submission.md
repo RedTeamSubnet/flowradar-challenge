@@ -55,6 +55,20 @@ The training script must:
 The generated model remains temporary inside the detector container and is
 destroyed after scoring.
 
+## Model Weight Policy
+
+Embedding model weights in either submitted script is prohibited. This includes
+pretrained parameters, serialized model blobs, encoded weight arrays,
+lookup tables representing learned parameters, or hard-coded weights produced
+outside the current scoring run.
+
+`train.py` must generate all learned weights from the provided
+`v2_train_data.csv` during the current scoring run. `submissions.py` may only
+use those generated weights through its `model` argument.
+
+Static algorithm configuration and ordinary hyperparameters are allowed, but
+they must not contain pretrained or externally generated model state.
+
 ## Inference Script
 
 The inference script must expose:
@@ -73,6 +87,9 @@ Inference code should tolerate:
 - missing or null optional values
 - numeric values represented as Python `int` or `float`
 - string-valued JA4 and sequence fields
+
+Inference must not include fallback embedded weights when `model` is missing or
+invalid.
 
 ## V1 Compatibility Testing
 

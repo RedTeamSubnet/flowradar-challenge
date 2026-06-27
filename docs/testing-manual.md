@@ -193,6 +193,14 @@ Invalid model JSON:
 - Write JSON to the exact second CLI argument.
 - Use `json.dump(...)`, not `repr(...)`.
 
+Embedded model weights:
+
+- Do not place pretrained weights, encoded model blobs, or learned lookup tables
+  inside `train.py` or `submissions.py`.
+- All learned weights must be generated from `v2_train_data.csv` during the
+  current run.
+- `submissions.py` must use only the generated `model` argument.
+
 Detector request failure:
 
 - Define `detect_vpn(features, model)`.

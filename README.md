@@ -38,6 +38,11 @@ isolated FlowRadar container. The container trains the model, keeps the model
 temporary for that scoring run, and serves inference while the challenge
 replays `v2_test_data.csv`.
 
+Miners may not embed pretrained or externally generated model weights in either
+file. All learned weights must be produced by `train.py` from
+`v2_train_data.csv` during the current scoring run, and `submissions.py` may
+only consume them through its `model` argument.
+
 ```json
 {
   "miner_output": {

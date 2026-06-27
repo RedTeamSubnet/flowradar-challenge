@@ -73,12 +73,17 @@ Do:
 - keep inference logic in `src/flr_challenge/challenge/flowradar/src/submissions.py`.
 - read the training CSV from `sys.argv[1]` and write JSON to `sys.argv[2]`.
 - train only from the provided mandatory v2 CSV.
+- generate all learned weights during the current scoring run.
 - score after every meaningful submission change.
 - inspect telemetry/results when score changes unexpectedly.
 
 Don't:
 - send empty or partial script content.
 - replace mandatory production training with v1 data.
+- embed pretrained, serialized, encoded, or hard-coded learned weights in
+  either submitted file.
+- add fallback model weights to `submissions.py`; use only the generated
+  `model` argument.
 - move submission logic outside `submissions.py` without updating challenge config.
 - assume stale score state; rerun scoring after edits.
 

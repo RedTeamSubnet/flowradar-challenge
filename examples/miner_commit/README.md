@@ -73,6 +73,11 @@ Miner output contains exactly two commit files:
 - `train.py` is called as `python train.py <training_csv> <model_json>`.
 - `submissions.py` exposes `detect_vpn(features, model)`.
 
+Pretrained or hard-coded learned weights are prohibited in both files.
+`train.py` must generate the model from the provided v2 training CSV during the
+current scoring run, and `submissions.py` must use only the generated `model`
+argument.
+
 Production always passes
 `volumes/storage/flowradar-challenge/data/v2_train_data.csv` to the trainer.
 Miners cannot choose a different training dataset. The label column is
