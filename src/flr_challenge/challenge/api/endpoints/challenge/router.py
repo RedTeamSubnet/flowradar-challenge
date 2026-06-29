@@ -46,6 +46,20 @@ def get_results(request: Request):
 
 
 @router.get(
+    "/feedback",
+    summary="Get feedback",
+    description="This endpoint returns the feedback for the miner.",
+    response_class=JSONResponse,
+)
+def get_feedback(request: Request):
+    _request_id = request.state.request_id
+    logger.info(f"[{_request_id}] - Getting feedback...")
+
+    feedback = payload_manager.get_feedback()
+    return {"feedback": feedback}
+
+
+@router.get(
     "/telemetry",
     summary="Get telemetry",
     description="This endpoint returns the scoring telemetry from the latest run.",
