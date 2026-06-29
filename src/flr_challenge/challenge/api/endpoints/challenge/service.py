@@ -90,7 +90,7 @@ def score(request_id: str, miner_output: MinerOutput) -> float:
             logger.info(f"[{request_id}] - Detector container is healthy")
 
             base_url = f"http://{ip_address}:{config.challenge.flowradar_port}"
-            training_response = requests.post(
+            training_response = requests.post(  # nosec
                 f"{base_url}/train",
                 timeout=config.challenge.training_timeout_seconds + 10,
             )

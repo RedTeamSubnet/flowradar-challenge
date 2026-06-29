@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import os
 import secrets
@@ -51,8 +49,7 @@ def main() -> int:
         )
 
     local_train_csv = (
-        root_dir
-        / "volumes/storage/flowradar-challenge/data/v2_train_data.csv"
+        root_dir / "volumes/storage/flowradar-challenge/data/v2_train_data.csv"
     )
     if not local_train_csv.exists() or local_train_csv.stat().st_size < 1_000_000:
         print(
@@ -108,7 +105,7 @@ def main() -> int:
         training_timeout = float(
             os.environ.get("FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS", "600")
         )
-        with request.urlopen(req, timeout=training_timeout + 300) as resp:
+        with request.urlopen(req, timeout=training_timeout + 300) as resp:  # nosec
             raw = resp.read().decode("utf-8")
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")

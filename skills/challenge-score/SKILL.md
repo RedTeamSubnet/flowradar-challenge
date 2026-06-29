@@ -16,6 +16,7 @@ python3 skills/challenge-score/scripts/check_score.py
 ```
 
 What it does:
+
 1. Loads `FLR_CHALLENGE_API_KEY` from root `.env` (if present).
 2. Reads training and inference files from `src/flr_challenge/challenge/flowradar/src/train.py` and `submissions.py`.
 3. Sends `POST http://localhost:10001/score` with `X-API-Key` header.
@@ -53,6 +54,7 @@ The script builds payload using the challenge submission format:
 ```
 
 `MinerOutput` constraints (from schema):
+
 - `commit_files` must contain exactly one `train.py` and one `submissions.py`.
 - additional files, duplicate names, path-based names, and empty content are rejected.
 - `train.py` is called as `python train.py <training_csv> <model_json>`.
@@ -60,6 +62,7 @@ The script builds payload using the challenge submission format:
 - each file must respect the configured submission line limit.
 
 Expected `/score` behavior:
+
 - endpoint trains with mandatory `v2_train_data.csv`.
 - endpoint scores provided `miner_output` by replaying `v2_test_data.csv`.
 - endpoint removes `vpn_is_enabled` before inference.
@@ -69,6 +72,7 @@ Expected `/score` behavior:
 # Do / Don't
 
 Do:
+
 - keep training logic in `src/flr_challenge/challenge/flowradar/src/train.py`.
 - keep inference logic in `src/flr_challenge/challenge/flowradar/src/submissions.py`.
 - read the training CSV from `sys.argv[1]` and write JSON to `sys.argv[2]`.
@@ -78,6 +82,7 @@ Do:
 - inspect telemetry/results when score changes unexpectedly.
 
 Don't:
+
 - send empty or partial script content.
 - replace mandatory production training with v1 data.
 - embed pretrained, serialized, encoded, or hard-coded learned weights in
@@ -90,12 +95,12 @@ Don't:
 # Helper Scripts
 
 - `python3 skills/challenge-score/scripts/check_score.py`
-  - reads `train.py` and `submissions.py`
-  - enforces mandatory v2 training, warns on compatibility test data, and
+    - reads `train.py` and `submissions.py`
+    - enforces mandatory v2 training, warns on compatibility test data, and
     validates Git LFS data
-  - calls `/score`
-  - allows the configured training timeout plus scoring time
-  - prints score or raw error response
+    - calls `/score`
+    - allows the configured training timeout plus scoring time
+    - prints score or raw error response
 
 # Verification Steps
 
@@ -110,20 +115,20 @@ Don't:
 # Troubleshooting
 
 - Missing file error:
-  - confirm both `train.py` and `submissions.py` exist.
-  - confirm Git LFS downloaded `v2_train_data.csv`.
+    - confirm both `train.py` and `submissions.py` exist.
+    - confirm Git LFS downloaded `v2_train_data.csv`.
 - Invalid JSON model:
-  - confirm `train.py` writes valid JSON to its second argument.
+    - confirm `train.py` writes valid JSON to its second argument.
 - Fingerprint serialization error:
-  - ensure inference handles missing features and JSON `null`.
+    - ensure inference handles missing features and JSON `null`.
 - Auth failure:
-  - confirm `FLR_CHALLENGE_API_KEY` value in root `.env`.
+    - confirm `FLR_CHALLENGE_API_KEY` value in root `.env`.
 - Validation error:
-  - compare payload to `MinerOutput` in `src/flr_challenge/challenge/api/endpoints/challenge/schemas.py`.
+    - compare payload to `MinerOutput` in `src/flr_challenge/challenge/api/endpoints/challenge/schemas.py`.
 - Connection error:
-  - verify local API is reachable at `http://localhost:10001`.
+    - verify local API is reachable at `http://localhost:10001`.
 - Need detailed scoring breakdown:
-  - inspect Docker container logs for challenge API/scorer service; logs include request errors and F1 details.
+    - inspect Docker container logs for challenge API/scorer service; logs include request errors and F1 details.
 
 # Related Endpoints
 

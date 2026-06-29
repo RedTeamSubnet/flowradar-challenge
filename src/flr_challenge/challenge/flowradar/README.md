@@ -18,12 +18,12 @@ script. Training runs inside this container against the mandatory
 
 ## Key Components
 
-| File             | Description                       |
-| ---------------- | --------------------------------- |
-| `train.py`       | Training script that writes a model JSON |
+| File             | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `train.py`       | Training script that writes a model JSON                   |
 | `submissions.py` | VPN detection logic exposing `detect_vpn(features, model)` |
-| `app.py`         | FastAPI application and endpoints |
-| `data_types.py`  | Pydantic models for input/output  |
+| `app.py`         | FastAPI application and endpoints                          |
+| `data_types.py`  | Pydantic models for input/output                           |
 
 ## Miner Contract
 

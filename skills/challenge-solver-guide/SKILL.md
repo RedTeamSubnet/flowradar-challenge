@@ -8,6 +8,7 @@ description: Use for designing and implementing high-score VPN detection submiss
 Guide agents to solve the FlowRadar challenge with robust VPN detection logic, not brittle one-rule heuristics.
 
 Primary objective:
+
 - maximize F1 score by improving precision/recall balance for VPN classification.
 
 # Quick Start
@@ -26,9 +27,11 @@ Primary objective:
 # Important Files
 
 See full map in:
+
 - `skills/challenge-solver-guide/references/important-files.md`
 
 Core challenge data/input locations:
+
 - mandatory training dataset: `volumes/storage/flowradar-challenge/data/v2_train_data.csv`
 - production scoring dataset: `volumes/storage/flowradar-challenge/data/v2_test_data.csv`
 - trainer: `src/flr_challenge/challenge/flowradar/src/train.py`
@@ -39,6 +42,7 @@ Both locations are mandatory because the score helper submits both files.
 # Architecture Overview
 
 High-level pipeline:
+
 1. Challenge API `/score` receives both files through
    `miner_output.commit_files`.
 2. API starts an isolated FlowRadar container with both scripts and mandatory
@@ -49,20 +53,24 @@ High-level pipeline:
 6. API computes final score from classification outcomes.
 
 Implementation implication:
+
 - strong solutions combine multiple flow signals and robust handling of noisy or missing values.
 
 # Scoring System
 
 Current scoring logic (`payload_managers.py`):
+
 - track TP, FP, TN, FN across replayed rows.
 - compute precision and recall.
 - compute F1 score and round to 3 decimals.
 
 Hard failure behavior:
+
 - if misses exceed `FLR_CHALLENGE_ACCEPTABLE_MISS_COUNT`, scoring stops early.
 - excessive misses/timeouts often lower score heavily.
 
 Optimization priority:
+
 - improve both precision and recall together.
 - reduce false positives without collapsing recall, and vice versa.
 
@@ -102,13 +110,13 @@ Optimization priority:
 # Common Vulnerability Patterns
 
 - High false-positive pattern:
-  - classifying normal asymmetric traffic as VPN too aggressively.
+    - classifying normal asymmetric traffic as VPN too aggressively.
 - High false-negative pattern:
-  - relying on only one VPN signature and missing alternate patterns.
+    - relying on only one VPN signature and missing alternate patterns.
 - Overfitting pattern:
-  - thresholds tuned to one narrow traffic distribution.
+    - thresholds tuned to one narrow traffic distribution.
 - Runtime failure pattern:
-  - unsafe casts and divide-by-zero paths in feature math.
+    - unsafe casts and divide-by-zero paths in feature math.
 
 # Challenge-Specific Hints
 
@@ -125,15 +133,16 @@ Optimization priority:
 # Do / Don't
 
 See:
+
 - `skills/challenge-solver-guide/references/do-and-dont.md`
 
 # Helper Scripts
 
 - Setup:
-  - `./skills/challenge-setup/scripts/setup.sh`
-  - `./skills/challenge-setup/scripts/healthcheck.sh`
+    - `./skills/challenge-setup/scripts/setup.sh`
+    - `./skills/challenge-setup/scripts/healthcheck.sh`
 - Score:
-  - `python3 skills/challenge-score/scripts/check_score.py`
+    - `python3 skills/challenge-score/scripts/check_score.py`
 
 # Verification Steps
 
@@ -147,16 +156,16 @@ See:
 # Troubleshooting
 
 - Score remains near zero:
-  - inspect TP/FP/FN balance and retune thresholds.
+    - inspect TP/FP/FN balance and retune thresholds.
 - Training fails:
-  - confirm `train.py` reads `sys.argv[1]`, writes `sys.argv[2]`, and handles
+    - confirm `train.py` reads `sys.argv[1]`, writes `sys.argv[2]`, and handles
     `vpn_is_enabled`.
 - Many request errors/timeouts:
-  - simplify expensive logic and keep runtime predictable.
+    - simplify expensive logic and keep runtime predictable.
 - No meaningful improvement after changes:
-  - revisit feature combinations and decision calibration.
+    - revisit feature combinations and decision calibration.
 - Inconsistent local results:
-  - reset environment, rerun setup, and validate `.env` + API key.
+    - reset environment, rerun setup, and validate `.env` + API key.
 
 # Example Requests
 

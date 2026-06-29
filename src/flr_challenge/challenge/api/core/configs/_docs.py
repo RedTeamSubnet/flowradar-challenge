@@ -18,11 +18,11 @@ class DocsConfig(BaseConfig):
     swagger_ui_oauth2_redirect_url: str | None = Field(
         default="{api_prefix}/docs/oauth2-redirect"
     )
-    summary: str | None = Field(default="This is a RedTeam Subnet's flowradar: vpn detection repository.")
-    description: str = Field(default="", max_length=8192)
-    terms_of_service: str | None = Field(
-        default="https://theredteam.io/terms"
+    summary: str | None = Field(
+        default="This is a RedTeam Subnet's flowradar: vpn detection repository."
     )
+    description: str = Field(default="", max_length=8192)
+    terms_of_service: str | None = Field(default="https://theredteam.io/terms")
     contact: dict[str, Any] | None = Field(
         default={
             "name": "Support Team",

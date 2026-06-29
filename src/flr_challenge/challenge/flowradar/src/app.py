@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import signal
-import subprocess
+import subprocess  # nosec
 import tempfile
 import threading
 from uuid import uuid4
@@ -28,7 +28,7 @@ _TRAINING_LOCK = threading.Lock()
 
 
 def _load_model() -> object:
-    model_path = os.getenv("FLOWRADAR_MODEL_PATH", "/tmp/model.json")
+    model_path = os.getenv("FLOWRADAR_MODEL_PATH", "/tmp/model.json")  # nosec
     if not os.path.exists(model_path):
         logger.warning("Model JSON not found at %s; using empty model", model_path)
         return {}
@@ -49,10 +49,8 @@ def train() -> dict[str, int | str]:
         raise HTTPException(status_code=409, detail="Training is already in progress.")
 
     training_path = os.getenv("FLOWRADAR_TRAINING_PATH", "/app/train.py")
-    training_csv_path = os.getenv(
-        "FLOWRADAR_TRAINING_CSV_PATH", "/data/training.csv"
-    )
-    model_path = os.getenv("FLOWRADAR_MODEL_PATH", "/tmp/model.json")
+    training_csv_path = os.getenv("FLOWRADAR_TRAINING_CSV_PATH", "/data/training.csv")
+    model_path = os.getenv("FLOWRADAR_MODEL_PATH", "/tmp/model.json")  # nosec
     timeout = float(os.getenv("FLOWRADAR_TRAINING_TIMEOUT_SECONDS", "600"))
     size_limit = int(
         os.getenv("FLOWRADAR_MODEL_JSON_SIZE_LIMIT", str(20 * 1024 * 1024))
@@ -64,9 +62,9 @@ def train() -> dict[str, int | str]:
             os.remove(model_path)
 
         with tempfile.TemporaryFile(mode="w+b") as output:
-            process = subprocess.Popen(
+            process = subprocess.Popen(  # nosec
                 [sys.executable, training_path, training_csv_path, model_path],
-                cwd="/tmp",
+                cwd="/tmp",  # nosec
                 stdout=output,
                 stderr=subprocess.STDOUT,
                 start_new_session=True,

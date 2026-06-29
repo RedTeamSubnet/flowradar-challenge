@@ -38,7 +38,7 @@ target-version = "py310"
 [lint]
 # Select all rules that are equivalent to pylint's default + important ones.
 # E: pycodestyle errors
-# F: Pyflakes  
+# F: Pyflakes
 # W: pycodestyle warnings
 # C90: mccabe complexity
 # PL: pylint rules (ruff's reimplementation)
@@ -48,15 +48,15 @@ target-version = "py310"
 # SIM: flake8-simplify
 # UP: pyupgrade
 select = [
-    "E", 
-    "F", 
-    "W", 
-    "C90", 
-    "PL", 
-    "B", 
-    "A", 
-    "C4", 
-    "SIM", 
+    "E",
+    "F",
+    "W",
+    "C90",
+    "PL",
+    "B",
+    "A",
+    "C4",
+    "SIM",
     "UP",
     # Additional rules for security and best practices
     "S",   # flake8-bandit

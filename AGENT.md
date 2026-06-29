@@ -8,12 +8,12 @@ file as the default playbook for coding agents working in the repository.
 `miner_output.commit_files` contains exactly:
 
 - `train.py`
-  - invoked as `python train.py <training_csv> <model_json>`
-  - must train from the CSV in `sys.argv[1]`
-  - must write valid JSON to `sys.argv[2]`
+    - invoked as `python train.py <training_csv> <model_json>`
+    - must train from the CSV in `sys.argv[1]`
+    - must write valid JSON to `sys.argv[2]`
 - `submissions.py`
-  - must expose `detect_vpn(features, model) -> bool`
-  - receives one feature row and the parsed training JSON
+    - must expose `detect_vpn(features, model) -> bool`
+    - receives one feature row and the parsed training JSON
 
 The goal is binary VPN classification. The final score is F1 for the positive
 VPN class.
@@ -160,8 +160,8 @@ The isolated detector also exposes:
 ## Skills
 
 - `skills/challenge-setup/SKILL.md`
-  - environment setup, Git LFS verification, Compose startup, health checks
+    - environment setup, Git LFS verification, Compose startup, health checks
 - `skills/challenge-score/SKILL.md`
-  - submit both scripts and inspect score-related endpoints
+    - submit both scripts and inspect score-related endpoints
 - `skills/challenge-solver-guide/SKILL.md`
-  - design the training/model/inference strategy and improve F1
+    - design the training/model/inference strategy and improve F1

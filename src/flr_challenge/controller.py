@@ -79,14 +79,13 @@ class FLRController(Controller):
             response = requests.get(result_url, timeout=5, verify=False)  # nosec
             response.raise_for_status()
             _result_response = response.json() if response.content else {}
-            _payload = _result_response.get("payload", {})
             _feedback = _result_response.get("feedback", {})
-            return _payload, _feedback
+            return _feedback
         except Exception as exc:
             bt.logging.error(
                 f"[CONTROLLER] Unable to fetch result from challenge endpoint: {exc}"
             )
-            return {}, {}
+            return {}
 
     def _get_telemetry_from_challenge(self) -> dict:
         telemetry_url = "http://localhost:10001/telemetry"
@@ -121,7 +120,8 @@ class FLRController(Controller):
     def same_score_comparison(self, miner_commit: MinerChallengeCommit) -> None:
         if not miner_commit.scoring_logs:
             bt.logging.warning(
-                f"[CONTROLLER] No scoring logs found for miner {miner_commit.miner_hotkey}, skipping same score comparison."
+                f"[CONTROLLER] No scoring logs found for miner {miner_commit.miner_hotkey}, \
+                    skipping same score comparison."
             )
         _scoring_log = miner_commit.scoring_logs[0]
         _commit_score = _scoring_log.score
@@ -138,7 +138,8 @@ class FLRController(Controller):
                 reference_commits_in_range.append(ref_commit)
         if not reference_commits_in_range:
             bt.logging.info(
-                f"[CONTROLLER] No reference commits found with score in range for miner {miner_commit.miner_hotkey}, skipping same score comparison."
+                f"[CONTROLLER] No reference commits found with score in range for miner \
+                    {miner_commit.miner_hotkey}, skipping same score comparison."
             )
             return
         for ref_commit in reference_commits_in_range:

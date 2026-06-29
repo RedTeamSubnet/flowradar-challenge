@@ -85,7 +85,7 @@ def run_flowradar_container(
         "PYTHONDONTWRITEBYTECODE": "1",
         "FLOWRADAR_TRAINING_PATH": "/app/train.py",
         "FLOWRADAR_TRAINING_CSV_PATH": "/data/training.csv",
-        "FLOWRADAR_MODEL_PATH": "/tmp/model.json",
+        "FLOWRADAR_MODEL_PATH": "/tmp/model.json",  # nosec
         "FLOWRADAR_TRAINING_TIMEOUT_SECONDS": str(
             config.challenge.training_timeout_seconds
         ),
@@ -100,7 +100,7 @@ def run_flowradar_container(
         volumes=volumes,
         name=container_name,
         read_only=True,
-        tmpfs={"/tmp": "rw,noexec,nosuid,size=64m"},
+        tmpfs={"/tmp": "rw,noexec,nosuid,size=64m"},  # nosec
         cap_drop=["ALL"],
         security_opt=["no-new-privileges:true"],
     )

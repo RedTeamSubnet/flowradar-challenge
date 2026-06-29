@@ -1,0 +1,22 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Run API",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "api",
+			"cwd": "${workspaceFolder}/src/flr_challenge/challenge",
+			"envFile": "${workspaceFolder}/.env",
+			"env": {
+				"FLOWRADAR_API_PORT": "10001",
+				"FLOWRADAR_CHALLENGE_API_KEY": "password12345",
+				"FLR_API_DATA_DIR": "${workspaceFolder}/volumes/storage/flowradar-challenge/data",
+				"FLR_API_LOGS_DIR": "${workspaceFolder}/volumes/storage/flowradar-challenge/logs",
+				"FLR_CHALLENGE_TEST_CSV_PATH": "{data_dir}/v2_test_data.csv",
+				"FLR_CHALLENGE_TRAIN_CSV_PATH": "{data_dir}/v2_train_data.csv"
+			},
+			"console": "integratedTerminal"
+		}
+	]
+}

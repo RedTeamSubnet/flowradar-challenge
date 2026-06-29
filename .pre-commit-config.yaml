@@ -21,6 +21,7 @@ exclude: |
     | data/.*
     | dataset/.*
     | datasets/.*
+    | .*\.csv$
     | tmp/.*
   )$
 

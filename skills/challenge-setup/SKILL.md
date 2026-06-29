@@ -33,11 +33,13 @@ Build image before start (optional):
 # Requirements
 
 Required before setup:
+
 - Docker
 - Docker Compose plugin (`docker compose`)
 - Git LFS for the mandatory `v2_train_data.csv`
 
 Optional for development workflow:
+
 - Python >= 3.10 and pip >= 23
 - git
 
@@ -54,28 +56,32 @@ Optional for development workflow:
 # Environment Variables
 
 Critical:
+
 - `FLR_CHALLENGE_API_KEY`
-  - Required for protected challenge endpoints (for example: `/score`).
-  - Setup script fails fast if this key is missing.
+    - Required for protected challenge endpoints (for example: `/score`).
+    - Setup script fails fast if this key is missing.
 
 Runtime:
+
 - `FLR_API_PORT`
-  - API port exposed by the compose service (default `10001`).
+    - API port exposed by the compose service (default `10001`).
 - `FLR_CHALLENGE_TRAIN_CSV_PATH`
-  - Must resolve to `{data_dir}/v2_train_data.csv` for production validation.
+    - Must resolve to `{data_dir}/v2_train_data.csv` for production validation.
 - `FLR_CHALLENGE_TEST_CSV_PATH`
-  - Must resolve to `{data_dir}/v2_test_data.csv` for production validation.
+    - Must resolve to `{data_dir}/v2_test_data.csv` for production validation.
 - `FLR_CHALLENGE_TRAINING_TIMEOUT_SECONDS`
-  - Maximum container training duration.
+    - Maximum container training duration.
 - `FLR_CHALLENGE_MODEL_JSON_SIZE_LIMIT`
-  - Maximum generated model JSON size.
+    - Maximum generated model JSON size.
 
 Debugging:
+
 - `DEBUG`
-  - When enabled (for example `DEBUG=true`), debug mode increases log verbosity.
-  - Useful for inspecting detector execution behavior during development.
+    - When enabled (for example `DEBUG=true`), debug mode increases log verbosity.
+    - Useful for inspecting detector execution behavior during development.
 
 Production-parity caution:
+
 - `FLR_CHALLENGE_ACCEPTABLE_MISS_COUNT`
 - `FLR_CHALLENGE_SINGLE_REQUEST_TIMEOUT`
 
@@ -84,6 +90,7 @@ Do not change these for production-grade score validation. You may tune them tem
 # Do / Don't
 
 Do:
+
 - keep `FLR_CHALLENGE_API_KEY` set before scoring.
 - keep production training fixed to `v2_train_data.csv`.
 - verify Git LFS data before starting the challenge.
@@ -91,6 +98,7 @@ Do:
 - use `--build` when Docker image or dependencies changed.
 
 Don't:
+
 - do not use v1 data as the production training dataset.
 - rely on modified timeout/miss-count values for final score conclusions.
 - skip checking container logs when API behavior is unexpected.
@@ -98,17 +106,17 @@ Don't:
 # Helper Scripts
 
 - `./skills/challenge-setup/scripts/setup.sh`
-  - validates Docker + Compose
-  - validates Git LFS and mandatory v2 datasets
-  - ensures `.env`
-  - validates `FLR_CHALLENGE_API_KEY`
-  - rejects non-v2 training and warns on non-v2 compatibility test data
-  - starts challenge service
+    - validates Docker + Compose
+    - validates Git LFS and mandatory v2 datasets
+    - ensures `.env`
+    - validates `FLR_CHALLENGE_API_KEY`
+    - rejects non-v2 training and warns on non-v2 compatibility test data
+    - starts challenge service
 
 - `./skills/challenge-setup/scripts/healthcheck.sh`
-  - checks `GET /ping`
-  - checks `GET /health`
-  - prints docs and OpenAPI URLs
+    - checks `GET /ping`
+    - checks `GET /health`
+    - prints docs and OpenAPI URLs
 
 # Verification Steps
 
@@ -122,18 +130,18 @@ Don't:
 # Troubleshooting
 
 - Setup fails with missing API key:
-  - add `FLR_CHALLENGE_API_KEY` to `.env`.
+    - add `FLR_CHALLENGE_API_KEY` to `.env`.
 - Training data is missing or very small:
-  - run `git lfs pull`.
-  - verify `volumes/storage/flowradar-challenge/data/v2_train_data.csv`.
+    - run `git lfs pull`.
+    - verify `volumes/storage/flowradar-challenge/data/v2_train_data.csv`.
 - Wrong dataset is used:
-  - set `FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"`.
-  - set `FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"`.
+    - set `FLR_CHALLENGE_TRAIN_CSV_PATH="{data_dir}/v2_train_data.csv"`.
+    - set `FLR_CHALLENGE_TEST_CSV_PATH="{data_dir}/v2_test_data.csv"`.
 - API not reachable:
-  - check `docker compose ps` and ensure port mapping for `FLR_API_PORT` is active.
+    - check `docker compose ps` and ensure port mapping for `FLR_API_PORT` is active.
 - Need deeper execution details:
-  - inspect Docker logs of the running challenge container for scoring/runtime traces.
-  - example: `docker compose logs -f challenge-api`
+    - inspect Docker logs of the running challenge container for scoring/runtime traces.
+    - example: `docker compose logs -f challenge-api`
 
 # Expected Success States
 

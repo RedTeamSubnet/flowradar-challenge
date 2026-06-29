@@ -25,9 +25,7 @@ class GZipConfig(FrozenBaseConfig):
 
 
 class ApiConfig(BaseConfig):
-    title: str = Field(
-        default="FlowRadar: VPN Detection", min_length=2, max_length=128
-    )
+    title: str = Field(default="FlowRadar: VPN Detection", min_length=2, max_length=128)
     slug: str = Field(default=API_SLUG, min_length=2, max_length=128)
     http_scheme: HTTPSchemeEnum = Field(default=HTTPSchemeEnum.http)
     bind_host: str = Field(
