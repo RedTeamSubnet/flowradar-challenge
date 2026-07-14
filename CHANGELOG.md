@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.2 (2026-07-14)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+
+
+**Full Changelog**: https://github.com/RedTeamSubnet/flowradar-challenge/compare/2.0.1...v2.0.2
+
 ## v2.0.1 (2026-06-29)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
