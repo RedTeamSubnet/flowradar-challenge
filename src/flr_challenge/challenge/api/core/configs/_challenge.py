@@ -80,7 +80,7 @@ class ScoringConfig(BaseModel):
 
 class ChallengeConfig(BaseConfig):
     api_key: SecretStr = Field(..., min_length=8, max_length=128)
-    single_request_timeout: float = Field(default=2, ge=0)
+    single_request_timeout: float = Field(default=0.1, ge=0)
     acceptable_miss_count: int = Field(default=10, ge=0)
     flowradar_ip: str = Field(
         "127.0.0.1", strip_whitespace=True, min_length=7, max_length=15
